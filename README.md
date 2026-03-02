@@ -81,7 +81,7 @@ The pipeline is designed to answer five real-world business questions that a por
 | Auto-ingestion | Snowflake Snowpipe (SQS) | Event-driven, zero-touch S3 → Snowflake |
 | Data warehouse | Snowflake | Cloud-native analytical SQL engine |
 | Transformation | dbt Core 1.8.2 + dbt-snowflake | Modular, tested SQL transformations |
-| Orchestration | Apache Airflow 2.9.1 | DAG scheduling, monitoring, alerting |
+| Orchestration | Apache Airflow 3.1.7 | DAG scheduling, monitoring, alerting |
 | Containerization | Docker Compose | Reproducible local environment |
 | Package manager | [uv](https://github.com/astral-sh/uv) (Astral) | Fast Rust-based pip replacement in all Docker images |
 | Visualization | Microsoft Power BI | Business dashboards via Snowflake connector |

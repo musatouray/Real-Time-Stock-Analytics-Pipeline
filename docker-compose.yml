@@ -4,7 +4,7 @@ version: "3.9"
 # Shared environment
 # ─────────────────────────────────────────────────────────────
 x-airflow-common: &airflow-common
-  image: apache/airflow:2.9.1-python3.11
+  image: apache/airflow:3.1.7-python3.11
   env_file: .env
   environment:
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
@@ -15,6 +15,8 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
     AIRFLOW__CORE__LOAD_EXAMPLES: "false"
     AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY}
+    # Airflow 3: explicitly use FAB auth manager so `airflow users create` works
+    AIRFLOW__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
     PYTHONPATH: /opt/airflow/dags:/opt/airflow/plugins
   volumes:
     - ./airflow/dags:/opt/airflow/dags

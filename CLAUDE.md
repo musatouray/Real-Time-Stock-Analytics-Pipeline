@@ -13,7 +13,7 @@
 | **Owner** | Amigomusa |
 | **Goal** | Portfolio project demonstrating end-to-end data engineering skills |
 | **End visualization** | Power BI (connected directly to Snowflake) |
-| **Last updated** | 2026-03-02 (uv migration) |
+| **Last updated** | 2026-03-02 (Airflow 3.1.7 upgrade) |
 
 ---
 
@@ -72,7 +72,7 @@ Finnhub WebSocket API
 | Data warehouse | Snowflake | — |
 | Ingestion | Snowpipe (AUTO_INGEST via SQS) | — |
 | Transformation | dbt Core + dbt-snowflake | 1.8.2 |
-| Orchestration | Apache Airflow (CeleryExecutor) | 2.9.1 |
+| Orchestration | Apache Airflow (CeleryExecutor) | 3.1.7 |
 | Containerization | Docker Compose | — |
 | Package manager | uv (Astral) | latest |
 | Visualization | Microsoft Power BI | Desktop |
@@ -207,3 +207,4 @@ scripts/init.sh / start.sh / stop.sh
 | 2026-03-02 | Initial scaffold created: Kafka, S3, Snowpipe, dbt, Airflow, Docker Compose |
 | 2026-03-02 | CLAUDE.md and README.md added |
 | 2026-03-02 | Migrated all Dockerfiles from pip to uv (ghcr.io/astral-sh/uv:latest) |
+| 2026-03-02 | Upgraded Airflow 2.9.1 → 3.1.7; providers: amazon 9.21.0, snowflake 6.9.1; added providers-fab for auth |
