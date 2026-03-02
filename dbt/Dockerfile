@@ -1,8 +1,11 @@
 FROM python:3.11-slim
 
+# Install uv — fast Rust-based package installer
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+
 WORKDIR /usr/app/dbt
 
-RUN pip install --no-cache-dir \
+RUN uv pip install --system --no-cache \
     dbt-core==1.8.2 \
     dbt-snowflake==1.8.2
 

@@ -83,6 +83,7 @@ The pipeline is designed to answer five real-world business questions that a por
 | Transformation | dbt Core 1.8.2 + dbt-snowflake | Modular, tested SQL transformations |
 | Orchestration | Apache Airflow 2.9.1 | DAG scheduling, monitoring, alerting |
 | Containerization | Docker Compose | Reproducible local environment |
+| Package manager | [uv](https://github.com/astral-sh/uv) (Astral) | Fast Rust-based pip replacement in all Docker images |
 | Visualization | Microsoft Power BI | Business dashboards via Snowflake connector |
 | Language | Python 3.11 | Producer, consumer, DAG logic |
 | IDE | VS Code | Development environment |

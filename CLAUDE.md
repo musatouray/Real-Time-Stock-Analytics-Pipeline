@@ -13,7 +13,7 @@
 | **Owner** | Amigomusa |
 | **Goal** | Portfolio project demonstrating end-to-end data engineering skills |
 | **End visualization** | Power BI (connected directly to Snowflake) |
-| **Last updated** | 2026-03-02 |
+| **Last updated** | 2026-03-02 (uv migration) |
 
 ---
 
@@ -74,6 +74,7 @@ Finnhub WebSocket API
 | Transformation | dbt Core + dbt-snowflake | 1.8.2 |
 | Orchestration | Apache Airflow (CeleryExecutor) | 2.9.1 |
 | Containerization | Docker Compose | — |
+| Package manager | uv (Astral) | latest |
 | Visualization | Microsoft Power BI | Desktop |
 | Language | Python | 3.11 |
 | IDE | VS Code | — |
@@ -194,6 +195,7 @@ scripts/init.sh / start.sh / stop.sh
 - **Airflow connections**: `snowflake_default` and `aws_default` are provisioned by `airflow-init`
 - **Snowflake Snowpipe** requires an SQS notification on the S3 prefix after script 06
 - **dbt `profiles.yml` reads from env vars** — never hard-code credentials in it
+- **Package manager is uv** — all Dockerfiles use `COPY --from=ghcr.io/astral-sh/uv:latest` + `uv pip install --system --no-cache`; never revert to bare `pip install`
 - **Update this file** whenever: stack changes, new tools added, direction pivots, new DAGs or models added
 
 ---
@@ -204,3 +206,4 @@ scripts/init.sh / start.sh / stop.sh
 |---|---|
 | 2026-03-02 | Initial scaffold created: Kafka, S3, Snowpipe, dbt, Airflow, Docker Compose |
 | 2026-03-02 | CLAUDE.md and README.md added |
+| 2026-03-02 | Migrated all Dockerfiles from pip to uv (ghcr.io/astral-sh/uv:latest) |
