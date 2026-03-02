@@ -1,4 +1,5 @@
-.PHONY: help setup up down restart logs ps dbt-run dbt-test dbt-docs kafka-topics
+.PHONY: help setup dev-setup lock up down restart logs ps \
+        dbt-run dbt-test dbt-docs kafka-topics
 
 # ─────────────────────────────────────────────────────────────
 # Default target
@@ -8,14 +9,17 @@ help:
 	@echo "  Real-Time Stock Analytics Pipeline"
 	@echo "  ────────────────────────────────────"
 	@echo "  make setup        Copy .env.example → .env and create log dirs"
+	@echo "  make dev-setup    Create local .venv for each service (IDE support)"
+	@echo "  make lock         Regenerate uv.lock files for all services"
+	@echo ""
 	@echo "  make up           Start all services"
-	@echo "  make down         Stop and remove containers"
-	@echo "  make restart      Restart all services"
+	@echo "  make down         Stop and remove containers + volumes"
+	@echo "  make restart      Rebuild and restart all services"
 	@echo "  make logs         Tail all container logs"
 	@echo "  make ps           Show running containers"
 	@echo ""
-	@echo "  make dbt-run      Run all dbt models"
-	@echo "  make dbt-test     Run dbt tests"
+	@echo "  make dbt-run      Run all dbt models (inside container)"
+	@echo "  make dbt-test     Run dbt tests (inside container)"
 	@echo "  make dbt-docs     Generate + serve dbt docs (port 8082)"
 	@echo ""
 	@echo "  make kafka-topics List Kafka topics"
@@ -28,6 +32,38 @@ setup:
 	@if [ ! -f .env ]; then cp .env.example .env; echo "Created .env — fill in your credentials."; fi
 	@mkdir -p airflow/logs airflow/plugins
 	@echo "Setup complete."
+
+# ─────────────────────────────────────────────────────────────
+# Local dev — create per-service virtual environments
+# Run once after cloning. Gives VS Code IntelliSense for each service.
+# ─────────────────────────────────────────────────────────────
+dev-setup:
+	@echo "==> Setting up local virtual environments via uv..."
+	@echo "--- kafka/producer ---"
+	cd kafka/producer && uv venv && uv sync
+	@echo "--- kafka/consumer ---"
+	cd kafka/consumer && uv venv && uv sync
+	@echo "--- dbt ---"
+	cd dbt && uv venv && uv sync
+	@echo "--- airflow (includes apache-airflow for IDE support) ---"
+	cd airflow && uv venv && uv sync --group dev
+	@echo ""
+	@echo "Virtual environments created. Point VS Code to:"
+	@echo "  kafka/producer/.venv"
+	@echo "  kafka/consumer/.venv"
+	@echo "  dbt/.venv"
+	@echo "  airflow/.venv"
+
+# ─────────────────────────────────────────────────────────────
+# Lockfile management — run when you add or change a dependency
+# ─────────────────────────────────────────────────────────────
+lock:
+	@echo "==> Regenerating uv.lock files..."
+	cd kafka/producer && uv lock
+	cd kafka/consumer && uv lock
+	cd dbt          && uv lock
+	@echo "Note: airflow uses constraint-based install — no lockfile."
+	@echo "Done."
 
 # ─────────────────────────────────────────────────────────────
 # Docker lifecycle

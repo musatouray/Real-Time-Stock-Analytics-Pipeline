@@ -1,0 +1,12 @@
+[project]
+name = "dbt-stock-analytics"
+version = "0.1.0"
+description = "dbt Core transformations for the stock analytics pipeline"
+requires-python = ">=3.11"
+dependencies = [
+    "dbt-core==1.8.2",
+    "dbt-snowflake==1.8.2",
+]
+
+[tool.uv]
+package = false          # no installable package, just dbt project files

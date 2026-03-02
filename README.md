@@ -100,7 +100,8 @@ The pipeline is designed to answer five real-world business questions that a por
 - **Built-in data quality** — Every dbt model has schema tests (unique, not_null); custom singular tests (positive volume); audit trail via dbt test logs
 - **Full observability** — Kafka UI for topic monitoring, Airflow UI for DAG health, Snowflake COPY_HISTORY for pipe audit, `monitoring_queries.sql` for ad-hoc checks
 - **Secrets-free config** — All credentials injected via `.env` at runtime; Snowflake uses a Storage Integration (IAM role) — no static AWS keys in Snowflake
-- **One-command startup** — `make up` builds all images and starts all 12 services in dependency order
+- **Fully reproducible builds** — `pyproject.toml` + `uv.lock` per service; Docker images built with `uv sync --frozen` ensuring byte-for-byte identical dependency trees in dev, CI, and cloud
+- **One-command startup** — `make up` builds all images and starts all 12 services in dependency order; `make dev-setup` bootstraps local venvs for IDE support
 
 ---
 
@@ -114,23 +115,26 @@ real_time_stock_analytics/
 ├── docker-compose.yml                 # All 12 services defined
 ├── .env.example                       # Template for all credentials
 ├── .gitignore
-├── Makefile                           # make up / down / dbt-run / dbt-test / kafka-topics
+├── .python-version                    # Pins Python 3.11 for uv and pyenv
+├── Makefile                           # make up / down / dev-setup / lock / dbt-run / kafka-topics
 │
 ├── kafka/
 │   ├── producer/
 │   │   ├── finnhub_producer.py        # Finnhub WebSocket → Kafka (stock.trades)
 │   │   ├── config.py                  # Symbol list, Kafka config
-│   │   ├── requirements.txt
-│   │   └── Dockerfile
+│   │   ├── pyproject.toml             # Dependency declaration
+│   │   ├── uv.lock                    # Pinned lockfile (committed to git)
+│   │   └── Dockerfile                 # uv sync --frozen for reproducible builds
 │   └── consumer/
 │       ├── s3_consumer.py             # Kafka → S3 micro-batch writer
 │       ├── config.py                  # Batch size, flush interval, S3 config
-│       ├── requirements.txt
+│       ├── pyproject.toml
+│       ├── uv.lock
 │       └── Dockerfile
 │
 ├── airflow/
-│   ├── Dockerfile                     # Airflow + dbt-snowflake + AWS provider
-│   ├── requirements.txt
+│   ├── Dockerfile                     # Airflow 3.1.7 + providers (constraint-based)
+│   ├── pyproject.toml                 # Providers + dev group (apache-airflow for IDE)
 │   ├── dags/
 │   │   ├── stock_pipeline_dag.py      # Hourly: S3 check → Snowpipe → dbt run → test
 │   │   └── dbt_transform_dag.py       # Every 15 min: standalone dbt transforms
@@ -138,7 +142,9 @@ real_time_stock_analytics/
 │   └── logs/                          # Airflow task logs (git-ignored)
 │
 ├── dbt/
-│   ├── Dockerfile                     # dbt-core + dbt-snowflake runner
+│   ├── Dockerfile                     # dbt-core + dbt-snowflake (uv sync --frozen)
+│   ├── pyproject.toml
+│   ├── uv.lock
 │   ├── dbt_project.yml                # Project config, materializations, tags
 │   ├── profiles.yml                   # Snowflake connection via env vars
 │   ├── packages.yml                   # dbt-utils, audit_helper

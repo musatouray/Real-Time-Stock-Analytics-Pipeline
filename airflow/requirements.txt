@@ -1,4 +1,0 @@
-apache-airflow-providers-amazon==9.21.0
-apache-airflow-providers-snowflake==6.9.1
-apache-airflow-providers-fab            # FAB auth manager — required for airflow users create in Airflow 3
-dbt-snowflake==1.8.2

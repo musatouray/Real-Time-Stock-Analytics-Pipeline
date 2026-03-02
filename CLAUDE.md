@@ -13,7 +13,7 @@
 | **Owner** | Amigomusa |
 | **Goal** | Portfolio project demonstrating end-to-end data engineering skills |
 | **End visualization** | Power BI (connected directly to Snowflake) |
-| **Last updated** | 2026-03-02 (Airflow 3.1.7 upgrade) |
+| **Last updated** | 2026-03-02 (full professional uv lockfile setup) |
 
 ---
 
@@ -195,7 +195,11 @@ scripts/init.sh / start.sh / stop.sh
 - **Airflow connections**: `snowflake_default` and `aws_default` are provisioned by `airflow-init`
 - **Snowflake Snowpipe** requires an SQS notification on the S3 prefix after script 06
 - **dbt `profiles.yml` reads from env vars** — never hard-code credentials in it
-- **Package manager is uv** — all Dockerfiles use `COPY --from=ghcr.io/astral-sh/uv:latest` + `uv pip install --system --no-cache`; never revert to bare `pip install`
+- **Package manager is uv** — dependencies declared in `pyproject.toml` per service; `uv.lock` committed for reproducible builds; Docker uses `uv sync --system --no-dev --frozen`; never revert to bare `pip install` or `requirements.txt`
+- **Dependency workflow**: add to `pyproject.toml` → run `make lock` → commit both files → Docker rebuilds from lockfile
+- **Airflow is the exception** — providers installed via `uv pip install --system . --constraint <url>` (no lockfile); Airflow core is pre-installed in the base image and manages its own transitive deps
+- **Local dev**: `make dev-setup` creates per-service `.venv/` folders with full dev deps; point VS Code Python interpreter to the relevant `.venv`
+- **Never commit `.venv/`** — already in `.gitignore` via `**/.venv/`
 - **Update this file** whenever: stack changes, new tools added, direction pivots, new DAGs or models added
 
 ---
@@ -208,3 +212,4 @@ scripts/init.sh / start.sh / stop.sh
 | 2026-03-02 | CLAUDE.md and README.md added |
 | 2026-03-02 | Migrated all Dockerfiles from pip to uv (ghcr.io/astral-sh/uv:latest) |
 | 2026-03-02 | Upgraded Airflow 2.9.1 → 3.1.7; providers: amazon 9.21.0, snowflake 6.9.1; added providers-fab for auth |
+| 2026-03-02 | Full professional uv setup: pyproject.toml + uv.lock per service; `uv sync --frozen` in Docker; `make dev-setup` + `make lock` targets |

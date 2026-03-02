@@ -1,0 +1,25 @@
+[project]
+name = "airflow-stock-plugins"
+version = "0.1.0"
+description = "Airflow providers and DAGs for the stock analytics pipeline"
+requires-python = ">=3.11"
+
+# Production deps: additional providers only.
+# apache-airflow itself is pre-installed in the Docker base image.
+# Installed in Docker with Airflow's constraints file (see Dockerfile).
+dependencies = [
+    "apache-airflow-providers-amazon==9.21.0",
+    "apache-airflow-providers-snowflake==6.9.1",
+    "apache-airflow-providers-fab",
+    "dbt-snowflake==1.8.2",
+]
+
+[dependency-groups]
+# Install this group locally for IDE support (IntelliSense, linting).
+# NOT installed inside Docker — Airflow is already in the base image.
+dev = [
+    "apache-airflow==3.1.7",
+]
+
+[tool.uv]
+package = false
