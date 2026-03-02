@@ -1,0 +1,27 @@
+stock_analytics:
+  target: "{{ env_var('DBT_TARGET', 'prod') }}"
+  outputs:
+
+    prod:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'STOCK_ANALYTICS_ROLE') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'STOCK_ANALYTICS_DB') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'STOCK_ANALYTICS_WH') }}"
+      schema: "{{ env_var('SNOWFLAKE_SCHEMA', 'RAW') }}"
+      threads: 4
+      client_session_keep_alive: false
+
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'STOCK_ANALYTICS_ROLE') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'STOCK_ANALYTICS_DB') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'STOCK_ANALYTICS_WH') }}"
+      schema: "DEV"
+      threads: 2
+      client_session_keep_alive: false

@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: raw
+    database: STOCK_ANALYTICS_DB
+    schema: RAW
+    description: "Raw trade data auto-ingested from S3 via Snowpipe"
+    tables:
+      - name: stock_trades_raw
+        description: "NDJSON trade events from the Finnhub WebSocket stream"
+        columns:
+          - name: RECORD_CONTENT
+            description: "Raw VARIANT column containing the full JSON trade record"
+          - name: RECORD_METADATA
+            description: "Snowpipe ingestion metadata (filename, row number, etc.)"

@@ -1,0 +1,40 @@
+version: 2
+
+models:
+  - name: stg_stock_trades
+    description: "Cleaned and typed trade events from the raw Snowpipe table"
+    columns:
+      - name: trade_id
+        description: "Surrogate key: SHA2 hash of (symbol, timestamp, price, volume)"
+        tests:
+          - unique
+          - not_null
+      - name: symbol
+        description: "Stock ticker symbol (e.g., AAPL)"
+        tests:
+          - not_null
+      - name: price
+        description: "Trade execution price in USD"
+        tests:
+          - not_null
+      - name: volume
+        description: "Number of shares traded"
+        tests:
+          - not_null
+      - name: traded_at
+        description: "UTC timestamp of trade execution"
+        tests:
+          - not_null
+      - name: conditions
+        description: "Array of trade condition codes as a comma-separated string"
+
+  - name: stg_company_profiles
+    description: "Reference table of company metadata seeded from stock_symbols CSV"
+    columns:
+      - name: symbol
+        tests:
+          - unique
+          - not_null
+      - name: company_name
+        tests:
+          - not_null

@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: fct_stock_trades
+    description: "Grain: one row per individual trade. Incremental, merged on trade_id."
+    columns:
+      - name: trade_id
+        tests:
+          - unique
+          - not_null
+      - name: symbol
+        tests: [not_null]
+      - name: price
+        tests: [not_null]
+      - name: volume
+        tests: [not_null]
+      - name: traded_at
+        tests: [not_null]
+
+  - name: fct_stock_ohlcv_hourly
+    description: >
+      Grain: one row per (symbol, hour). OHLCV plus volatility metrics.
+      Incremental, merged on (symbol, hour_bucket).
+    columns:
+      - name: symbol
+        tests: [not_null]
+      - name: hour_bucket
+        tests: [not_null]
+      - name: open_price
+        tests: [not_null]
+      - name: close_price
+        tests: [not_null]
+
+  - name: dim_companies
+    description: "Dimension table for company metadata. SCD Type 1 (overwrite)."
+    columns:
+      - name: symbol
+        tests:
+          - unique
+          - not_null
+      - name: company_name
+        tests: [not_null]

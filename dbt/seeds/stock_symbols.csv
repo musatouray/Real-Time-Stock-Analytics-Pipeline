@@ -1,0 +1,11 @@
+symbol,company_name,sector,industry,exchange
+AAPL,Apple Inc.,Technology,Consumer Electronics,NASDAQ
+MSFT,Microsoft Corporation,Technology,Software—Infrastructure,NASDAQ
+GOOGL,Alphabet Inc.,Communication Services,Internet Content & Information,NASDAQ
+AMZN,Amazon.com Inc.,Consumer Cyclical,Internet Retail,NASDAQ
+TSLA,Tesla Inc.,Consumer Cyclical,Auto Manufacturers,NASDAQ
+META,Meta Platforms Inc.,Communication Services,Internet Content & Information,NASDAQ
+NVDA,NVIDIA Corporation,Technology,Semiconductors,NASDAQ
+JPM,JPMorgan Chase & Co.,Financial Services,Banks—Diversified,NYSE
+V,Visa Inc.,Financial Services,Credit Services,NYSE
+JNJ,Johnson & Johnson,Healthcare,Drug Manufacturers—General,NYSE

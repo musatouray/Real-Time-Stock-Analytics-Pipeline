@@ -1,0 +1,249 @@
+version: "3.9"
+
+# ─────────────────────────────────────────────────────────────
+# Shared environment
+# ─────────────────────────────────────────────────────────────
+x-airflow-common: &airflow-common
+  image: apache/airflow:2.9.1-python3.11
+  env_file: .env
+  environment:
+    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+    AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY}
+    PYTHONPATH: /opt/airflow/dags:/opt/airflow/plugins
+  volumes:
+    - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/plugins:/opt/airflow/plugins
+    - ./airflow/logs:/opt/airflow/logs
+    - ./dbt:/usr/app/dbt
+    - ./.env:/opt/airflow/.env:ro
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  networks:
+    - stock_net
+
+services:
+
+  # ─────────────────────────────────────────
+  # INFRASTRUCTURE: Zookeeper + Kafka
+  # ─────────────────────────────────────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_log:/var/lib/zookeeper/log
+    networks:
+      - stock_net
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 24
+      KAFKA_JMX_PORT: 9101
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - stock_net
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - stock_net
+
+  # ─────────────────────────────────────────
+  # KAFKA PRODUCER: Finnhub → Kafka
+  # ─────────────────────────────────────────
+  finnhub-producer:
+    build:
+      context: ./kafka/producer
+      dockerfile: Dockerfile
+    container_name: finnhub-producer
+    env_file: .env
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: on-failure
+    networks:
+      - stock_net
+
+  # ─────────────────────────────────────────
+  # KAFKA CONSUMER: Kafka → S3
+  # ─────────────────────────────────────────
+  s3-consumer:
+    build:
+      context: ./kafka/consumer
+      dockerfile: Dockerfile
+    container_name: s3-consumer
+    env_file: .env
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: on-failure
+    networks:
+      - stock_net
+
+  # ─────────────────────────────────────────
+  # AIRFLOW: Metadata DB (Postgres) + Redis
+  # ─────────────────────────────────────────
+  postgres:
+    image: postgres:16
+    container_name: airflow-postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - stock_net
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: airflow-redis
+    expose:
+      - 6379
+    networks:
+      - stock_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  airflow-init:
+    <<: *airflow-common
+    container_name: airflow-init
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate
+        airflow users create \
+          --username ${AIRFLOW_WWW_USER_USERNAME:-admin} \
+          --firstname Admin \
+          --lastname User \
+          --role Admin \
+          --email ${AIRFLOW_WWW_USER_EMAIL:-admin@example.com} \
+          --password ${AIRFLOW_WWW_USER_PASSWORD:-admin}
+        airflow connections add 'aws_default' \
+          --conn-type 'aws' \
+          --conn-extra "{\"aws_access_key_id\": \"${AWS_ACCESS_KEY_ID}\", \"aws_secret_access_key\": \"${AWS_SECRET_ACCESS_KEY}\", \"region_name\": \"${AWS_REGION}\"}" || true
+    restart: on-failure
+
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: airflow-webserver
+    command: webserver
+    ports:
+      - "8081:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: airflow-scheduler
+    command: scheduler
+    restart: unless-stopped
+
+  airflow-worker:
+    <<: *airflow-common
+    container_name: airflow-worker
+    command: celery worker
+    restart: unless-stopped
+
+  airflow-triggerer:
+    <<: *airflow-common
+    container_name: airflow-triggerer
+    command: triggerer
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────
+  # DBT: transformation runner
+  # ─────────────────────────────────────────
+  dbt:
+    build:
+      context: ./dbt
+      dockerfile: Dockerfile
+    container_name: dbt-runner
+    env_file: .env
+    volumes:
+      - ./dbt:/usr/app/dbt
+    networks:
+      - stock_net
+    command: ["tail", "-f", "/dev/null"]   # keep alive; Airflow triggers dbt runs
+
+# ─────────────────────────────────────────────────────────────
+# Volumes
+# ─────────────────────────────────────────────────────────────
+volumes:
+  zookeeper_data:
+  zookeeper_log:
+  kafka_data:
+  postgres_data:
+
+# ─────────────────────────────────────────────────────────────
+# Network
+# ─────────────────────────────────────────────────────────────
+networks:
+  stock_net:
+    driver: bridge

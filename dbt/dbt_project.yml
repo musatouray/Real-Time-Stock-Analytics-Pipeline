@@ -1,0 +1,50 @@
+name: stock_analytics
+version: "1.0.0"
+config-version: 2
+
+profile: stock_analytics
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+analysis-paths: ["analyses"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# ─────────────────────────────────────────────────────────────
+# Model configurations
+# ─────────────────────────────────────────────────────────────
+models:
+  stock_analytics:
+
+    staging:
+      +schema: staging
+      +materialized: view
+      +tags: ["staging"]
+
+    intermediate:
+      +schema: intermediate
+      +materialized: table
+      +tags: ["intermediate"]
+
+    marts:
+      +schema: marts
+      +materialized: table
+      +tags: ["marts"]
+      fct_stock_trades:
+        +materialized: incremental
+        +incremental_strategy: merge
+        +unique_key: trade_id
+      fct_stock_ohlcv_hourly:
+        +materialized: incremental
+        +incremental_strategy: merge
+        +unique_key: ["symbol", "hour_bucket"]
+
+seeds:
+  stock_analytics:
+    +schema: seeds
