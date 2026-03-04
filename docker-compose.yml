@@ -12,9 +12,9 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
     AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY}
-    # Airflow 3: explicitly use FAB auth manager so `airflow users create` works
-    AIRFLOW__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+    AIRFLOW__API__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY}
+    # Airflow 3: FAB auth manager enables `airflow fab create-user`
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
     PYTHONPATH: /opt/airflow/dags:/opt/airflow/plugins
   volumes:
     - ./airflow/dags:/opt/airflow/dags
@@ -175,13 +175,13 @@ services:
       - -c
       - |
         airflow db migrate
-        airflow users create \
+        airflow fab create-user \
           --username ${AIRFLOW_WWW_USER_USERNAME:-admin} \
           --firstname Admin \
           --lastname User \
           --role Admin \
           --email ${AIRFLOW_WWW_USER_EMAIL:-admin@example.com} \
-          --password ${AIRFLOW_WWW_USER_PASSWORD:-admin}
+          --password ${AIRFLOW_WWW_USER_PASSWORD:-admin} || true
         airflow connections add 'aws_default' \
           --conn-type 'aws' \
           --conn-extra "{\"aws_access_key_id\": \"${AWS_ACCESS_KEY_ID}\", \"aws_secret_access_key\": \"${AWS_SECRET_ACCESS_KEY}\", \"region_name\": \"${AWS_REGION}\"}" || true
@@ -190,7 +190,7 @@ services:
   airflow-webserver:
     <<: *airflow-common
     container_name: airflow-webserver
-    command: webserver
+    command: api-server
     ports:
       - "8081:8080"
     healthcheck:
