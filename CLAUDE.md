@@ -13,7 +13,7 @@
 | **Owner** | Amigomusa |
 | **Goal** | Portfolio project demonstrating end-to-end data engineering skills |
 | **End visualization** | Power BI (connected directly to Snowflake) |
-| **Last updated** | 2026-03-04 (Docker uv fix + .env credential wiring) |
+| **Last updated** | 2026-03-04 (Airflow 3 breaking change fixes) |
 
 ---
 
@@ -192,7 +192,8 @@ scripts/init.sh / start.sh / stop.sh
 - **Incremental models use MERGE** — unique keys are `trade_id` for trades, `(symbol, hour_bucket)` for OHLCV
 - **S3 files are NDJSON** — one JSON object per line, not a JSON array
 - **Kafka internal listener is `kafka:29092`** — external is `localhost:9092`; use the internal one inside Docker
-- **Airflow connections**: `snowflake_default` and `aws_default` are provisioned by `airflow-init`
+- **Airflow 3 commands** — `airflow webserver` is removed → use `airflow api-server`; `airflow users create` is removed → use `airflow fab create-user`; auth manager config key is `AIRFLOW__CORE__AUTH_MANAGER`; secret key is `AIRFLOW__API__SECRET_KEY` (not `AIRFLOW__WEBSERVER__SECRET_KEY`)
+- **Airflow connections**: `aws_default` is provisioned by `airflow-init`; `snowflake_default` must be added manually or via a future init step
 - **Snowflake Snowpipe** requires an SQS notification on the S3 prefix after script 06
 - **dbt `profiles.yml` reads from env vars** — never hard-code credentials in it
 - **Package manager is uv** — dependencies declared in `pyproject.toml` per service; `uv.lock` committed for reproducible builds; never revert to bare `pip install` or `requirements.txt`
@@ -218,3 +219,4 @@ scripts/init.sh / start.sh / stop.sh
 | 2026-03-02 | Full professional uv setup: pyproject.toml + uv.lock per service; `uv sync --frozen` in Docker; `make dev-setup` + `make lock` targets |
 | 2026-03-04 | Fixed Docker uv install: replaced `--system` flag (removed in uv v0.5) with `ENV VIRTUAL_ENV + PATH` pattern; added `.dockerignore` per service |
 | 2026-03-04 | Wired all docker-compose credentials to `.env`: Postgres service uses `${POSTGRES_USER/PASSWORD/DB}`; Airflow connection strings use `${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN}` and `${AIRFLOW__CELERY__RESULT_BACKEND}` |
+| 2026-03-04 | Fixed Airflow 3 breaking changes: `webserver` → `api-server`; `airflow users create` → `airflow fab create-user`; `AIRFLOW__AUTH_MANAGER` → `AIRFLOW__CORE__AUTH_MANAGER`; `AIRFLOW__WEBSERVER__SECRET_KEY` → `AIRFLOW__API__SECRET_KEY` |
