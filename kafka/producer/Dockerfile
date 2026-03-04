@@ -3,9 +3,11 @@ FROM python:3.11-slim
 # Install uv — fast Rust-based package installer
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
-ENV UV_SYSTEM_PYTHON=1
-
 WORKDIR /app
+
+# Create venv via uv and add it to PATH so 'python' resolves to the venv Python
+ENV VIRTUAL_ENV=/app/.venv \
+    PATH="/app/.venv/bin:$PATH"
 
 # Copy lockfile first — this layer is cached unless dependencies change
 COPY pyproject.toml uv.lock ./
