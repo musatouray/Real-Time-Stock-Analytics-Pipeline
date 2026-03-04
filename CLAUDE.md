@@ -13,7 +13,7 @@
 | **Owner** | Amigomusa |
 | **Goal** | Portfolio project demonstrating end-to-end data engineering skills |
 | **End visualization** | Power BI (connected directly to Snowflake) |
-| **Last updated** | 2026-03-02 (full professional uv lockfile setup) |
+| **Last updated** | 2026-03-04 (Docker uv fix + .env credential wiring) |
 
 ---
 
@@ -195,9 +195,12 @@ scripts/init.sh / start.sh / stop.sh
 - **Airflow connections**: `snowflake_default` and `aws_default` are provisioned by `airflow-init`
 - **Snowflake Snowpipe** requires an SQS notification on the S3 prefix after script 06
 - **dbt `profiles.yml` reads from env vars** — never hard-code credentials in it
-- **Package manager is uv** — dependencies declared in `pyproject.toml` per service; `uv.lock` committed for reproducible builds; Docker uses `uv sync --system --no-dev --frozen`; never revert to bare `pip install` or `requirements.txt`
+- **Package manager is uv** — dependencies declared in `pyproject.toml` per service; `uv.lock` committed for reproducible builds; never revert to bare `pip install` or `requirements.txt`
+- **uv Docker pattern** — set `ENV VIRTUAL_ENV=<workdir>/.venv` and `PATH="<venv>/bin:$PATH"` before `RUN uv sync --no-dev --frozen`; do NOT use `--system` (removed in uv v0.5+) or `UV_SYSTEM_PYTHON=1` (unreliable); uv creates `.venv`, PATH makes runtime `python` use it
 - **Dependency workflow**: add to `pyproject.toml` → run `make lock` → commit both files → Docker rebuilds from lockfile
 - **Airflow is the exception** — providers installed via `uv pip install --system . --constraint <url>` (no lockfile); Airflow core is pre-installed in the base image and manages its own transitive deps
+- **docker-compose credential pattern** — all secrets and credentials reference `.env` via `${VAR}` interpolation or `env_file: .env`; hardcoded values in `environment:` blocks are topology/non-secret config only (ports, executor type, etc.); never hardcode passwords, keys, or connection strings directly in `docker-compose.yml`
+- **Postgres + Airflow credential alignment** — `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` in `.env` must match the credentials embedded in `AIRFLOW__DATABASE__SQL_ALCHEMY_CONN` and `AIRFLOW__CELERY__RESULT_BACKEND`; changing one requires changing both; if Postgres volume already exists with old credentials, run `docker compose down -v` to wipe and reinitialize
 - **Local dev**: `make dev-setup` creates per-service `.venv/` folders with full dev deps; point VS Code Python interpreter to the relevant `.venv`
 - **Never commit `.venv/`** — already in `.gitignore` via `**/.venv/`
 - **Update this file** whenever: stack changes, new tools added, direction pivots, new DAGs or models added
@@ -213,3 +216,5 @@ scripts/init.sh / start.sh / stop.sh
 | 2026-03-02 | Migrated all Dockerfiles from pip to uv (ghcr.io/astral-sh/uv:latest) |
 | 2026-03-02 | Upgraded Airflow 2.9.1 → 3.1.7; providers: amazon 9.21.0, snowflake 6.9.1; added providers-fab for auth |
 | 2026-03-02 | Full professional uv setup: pyproject.toml + uv.lock per service; `uv sync --frozen` in Docker; `make dev-setup` + `make lock` targets |
+| 2026-03-04 | Fixed Docker uv install: replaced `--system` flag (removed in uv v0.5) with `ENV VIRTUAL_ENV + PATH` pattern; added `.dockerignore` per service |
+| 2026-03-04 | Wired all docker-compose credentials to `.env`: Postgres service uses `${POSTGRES_USER/PASSWORD/DB}`; Airflow connection strings use `${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN}` and `${AIRFLOW__CELERY__RESULT_BACKEND}` |
