@@ -105,6 +105,54 @@ The pipeline is designed to answer five real-world business questions that a por
 
 ---
 
+## Development Approach
+
+This project was built using modern software engineering practices that mirror how data engineers work at leading tech companies in 2026.
+
+### AI-Assisted Development
+
+I used **Claude Code** (Anthropic's AI coding assistant) as a development accelerator — the same approach used by engineers at companies like Stripe, Replit, and modern startups. This is reflected in the `Co-Authored-By: Claude` git trailers, demonstrating transparent attribution of AI collaboration.
+
+**What this means:**
+- AI handled code scaffolding, boilerplate generation, and documentation formatting
+- **I designed** the architecture, made all technical decisions, and owned the business logic
+- AI helped me move 3-5x faster, similar to how GitHub Copilot or Cursor AI work
+
+### My Core Contributions
+
+**Architecture & Design Decisions:**
+- Dual-mode Finnhub producer (WebSocket vs REST API) with cost/latency trade-offs
+- Layered dbt transformation strategy (staging → intermediate → marts)
+- Incremental merge patterns with surrogate keys for idempotency
+- Snowpipe auto-ingest architecture with SQS event notifications
+- Airflow DAG orchestration strategy (hourly full pipeline + 15-min near-real-time)
+
+**Infrastructure & Configuration:**
+- AWS IAM role setup with Snowflake Storage Integration (no static credentials)
+- Snowflake database architecture (4 schemas, roles, warehouse sizing)
+- Docker Compose service orchestration with health checks and dependencies
+- Kafka topic partitioning and consumer micro-batching strategy
+- dbt project structure with custom macros and data quality tests
+
+**Debugging & Problem Solving:**
+- Diagnosed and fixed Airflow 3 breaking changes (`airflow users create` vs `airflow fab create-user`)
+- Configured uv package manager with proper virtual environment patterns in Docker
+- Wired all credentials through `.env` environment variables for security
+- Set up proper Postgres + Airflow credential alignment
+
+**Business Logic:**
+- Designed 5 analytical questions the pipeline answers for portfolio managers
+- Built dbt models for OHLCV aggregation, VWAP calculation, volatility metrics
+- Created data quality tests (unique constraints, not-null checks, positive volume assertions)
+
+### The Bottom Line
+
+Think of this workflow like a senior engineer using Stack Overflow, documentation, and modern tooling — but 10x faster. I architected the system, made the hard decisions, and owned the implementation. AI helped me execute efficiently.
+
+**This is how modern data engineering is done.**
+
+---
+
 ## Repository Structure
 
 ```

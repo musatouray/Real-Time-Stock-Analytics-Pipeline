@@ -15,40 +15,37 @@ USE DATABASE STOCK_ANALYTICS_DB;
 USE SCHEMA RAW;
 USE WAREHOUSE STOCK_ANALYTICS_WH;
 
+
+-- ── JSON File Format ─────────────────────────────────────────
+CREATE OR REPLACE FILE FORMAT STOCK_ANALYTICS_DB.RAW.JSON_FILE_FORMAT
+    TYPE               = 'JSON'
+    STRIP_OUTER_ARRAY  = FALSE -- matches single-object Kafka messages
+    COMPRESSION        = 'AUTO'
+    IGNORE_UTF8_ERRORS = TRUE;
+   
+
+
 -- ── External Stage ─────────────────────────────────────────
-CREATE STAGE IF NOT EXISTS STOCK_ANALYTICS_DB.RAW.S3_TRADES_STAGE
-    STORAGE_INTEGRATION = STOCK_ANALYTICS_S3_INT
-    URL                 = 's3://<YOUR_BUCKET_NAME>/raw/trades/'
-    FILE_FORMAT         = (
-        TYPE              = 'JSON'
-        STRIP_OUTER_ARRAY = FALSE    -- files are NDJSON (one JSON per line)
-        COMPRESSION       = 'AUTO'
-    )
-    COMMENT = 'External stage pointing to the Kafka consumer S3 output';
+CREATE OR REPLACE STAGE STOCK_ANALYTICS_DB.RAW.S3_TRADES_STAGE 
+    STORAGE_INTEGRATION      = stock_analytics_s3_integration
+    URL                      = 's3://stock-files-raw/raw/trades/'
+    FILE_FORMAT              = STOCK_ANALYTICS_DB.RAW.JSON_FILE_FORMAT
+    COMMENT = 'External stage pointing to the Kafka consumer S3 bucket';
+
 
 -- ── Snowpipe ────────────────────────────────────────────────
-CREATE PIPE IF NOT EXISTS STOCK_ANALYTICS_DB.RAW.TRADES_PIPE
-    AUTO_INGEST = TRUE
-    COMMENT     = 'Auto-ingest trade NDJSON files from S3 into STOCK_TRADES_RAW'
-AS
-COPY INTO STOCK_ANALYTICS_DB.RAW.STOCK_TRADES_RAW (
-    RECORD_CONTENT,
-    RECORD_METADATA
-)
-FROM (
-    SELECT
-        $1,                          -- the JSON record
-        METADATA$FILENAME            -- file path from S3
-    FROM @STOCK_ANALYTICS_DB.RAW.S3_TRADES_STAGE
-)
-FILE_FORMAT = (
-    TYPE              = 'JSON'
-    STRIP_OUTER_ARRAY = FALSE
-);
+CREATE OR REPLACE PIPE STOCK_ANALYTICS_DB.RAW.TRADES_PIPE 
+AUTO_INGEST = TRUE
+COMMENT = 'Auto-ingest trade JSON files from S3 into STOCK_TRADES_RAW'
+AS 
+COPY INTO STOCK_ANALYTICS_DB.RAW.STOCK_TRADES_RAW (RECORD_CONTENT)
+FROM @STOCK_ANALYTICS_DB.RAW.S3_TRADES_STAGE
+FILE_FORMAT = STOCK_ANALYTICS_DB.RAW.JSON_FILE_FORMAT;
+
 
 -- ── Inspect pipe status ─────────────────────────────────────
--- SELECT SYSTEM$PIPE_STATUS('STOCK_ANALYTICS_DB.RAW.TRADES_PIPE');
---
+SELECT SYSTEM$PIPE_STATUS('STOCK_ANALYTICS_DB.RAW.TRADES_PIPE');
+
 -- ── Get the SQS ARN to configure S3 event notification ─────
--- SHOW PIPES LIKE 'TRADES_PIPE';
+SHOW PIPES LIKE 'TRADES_PIPE';
 -- ──  Copy the notification_channel value → configure S3 → SQS notification
