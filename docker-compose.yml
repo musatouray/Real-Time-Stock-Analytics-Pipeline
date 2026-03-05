@@ -175,7 +175,7 @@ services:
       - -c
       - |
         airflow db migrate
-        airflow fab create-user \
+        airflow users create \
           --username ${AIRFLOW_WWW_USER_USERNAME:-admin} \
           --firstname Admin \
           --lastname User \

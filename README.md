@@ -1,6 +1,6 @@
 # Real-Time Stock Analytics Pipeline
 
-> An end-to-end data engineering portfolio project that streams live stock market data from the Finnhub API through Kafka, lands it in AWS S3, auto-ingests it into Snowflake via Snowpipe, transforms it with dbt Core, orchestrates everything with Apache Airflow, and delivers insights through Power BI dashboards — all containerized with Docker.
+> An end-to-end data engineering portfolio project that streams live stock market data from the Finnhub API (WebSocket or REST API) through Kafka, lands it in AWS S3, auto-ingests it into Snowflake via Snowpipe, transforms it with dbt Core, orchestrates everything with Apache Airflow, and delivers insights through Power BI dashboards — all containerized with Docker.
 
 ---
 
@@ -8,7 +8,7 @@
 
 This project simulates a production-grade real-time analytics platform that a financial services company would use to monitor stock market activity. It demonstrates the full modern data engineering lifecycle:
 
-- **Ingestion** of live WebSocket trade events at sub-second latency
+- **Ingestion** of live market data via dual-mode producer (WebSocket real-time streaming or REST API 15-min polling)
 - **Streaming** through a fault-tolerant Kafka message bus
 - **Landing** micro-batched NDJSON files in a partitioned S3 data lake
 - **Auto-ingestion** into Snowflake using Snowpipe event-driven triggers
@@ -75,7 +75,7 @@ The pipeline is designed to answer five real-world business questions that a por
 
 | Layer | Technology | Role |
 |---|---|---|
-| Data source | [Finnhub](https://finnhub.io) WebSocket API | Real-time trade tick stream |
+| Data source | [Finnhub](https://finnhub.io) (WebSocket + REST API) | Dual-mode: Real-time trades or 15-min polling |
 | Message bus | Apache Kafka (Confluent 7.6.1) | Durable, fault-tolerant event queue |
 | Object storage | AWS S3 | Partitioned NDJSON data lake |
 | Auto-ingestion | Snowflake Snowpipe (SQS) | Event-driven, zero-touch S3 → Snowflake |
@@ -92,7 +92,7 @@ The pipeline is designed to answer five real-world business questions that a por
 
 ## Key Features
 
-- **True real-time ingestion** — Finnhub WebSocket delivers sub-second trade ticks; Kafka buffers them with zero data loss
+- **Dual-mode data ingestion** — Switch between WebSocket (sub-second real-time trades) and REST API (15-min polling) via environment variable; default is WebSocket for portfolio demo, polling mode for cost optimization
 - **Micro-batch S3 landing** — Consumer flushes every 100 records or 60 seconds, maintaining near-real-time latency without per-record S3 writes
 - **Event-driven Snowpipe** — SQS notifications trigger Snowpipe automatically the moment a file lands in S3; no polling required
 - **Layered dbt architecture** — Staging (views) → Intermediate (tables) → Marts (incremental merge) follows the industry-standard medallion-style pattern
@@ -120,8 +120,8 @@ real_time_stock_analytics/
 │
 ├── kafka/
 │   ├── producer/
-│   │   ├── finnhub_producer.py        # Finnhub WebSocket → Kafka (stock.trades)
-│   │   ├── config.py                  # Symbol list, Kafka config
+│   │   ├── finnhub_producer.py        # Dual-mode: WebSocket (real-time) or REST API (polling)
+│   │   ├── config.py                  # Symbol list, Kafka config, mode selector
 │   │   ├── pyproject.toml             # Dependency declaration
 │   │   ├── uv.lock                    # Pinned lockfile (committed to git)
 │   │   └── Dockerfile                 # uv sync --frozen for reproducible builds
@@ -200,11 +200,12 @@ real_time_stock_analytics/
   MARKET DATA                  STREAMING LAYER                  STORAGE LAYER
   ───────────                  ───────────────                  ─────────────
   ┌─────────────┐              ┌─────────────┐
-  │  Finnhub    │  WebSocket   │   Kafka     │
-  │  API        │─────────────▶│   Producer  │
-  │  (trades,   │  sub-second  │             │
-  │   quotes)   │   ticks      └──────┬──────┘
-  └─────────────┘                     │ topic: stock.trades
+  │  Finnhub    │  DUAL-MODE   │   Kafka     │
+  │  API        │──────────────│   Producer  │
+  │             │ WebSocket OR │             │
+  │  • WebSocket│  REST (15m)  └──────┬──────┘
+  │  • REST API │                     │ topic: stock.trades
+  └─────────────┘                     │ (3 partitions)
                                       │ (3 partitions)
                                       ▼
                                ┌─────────────┐    micro-batch     ┌──────────────┐
@@ -307,7 +308,7 @@ real_time_stock_analytics/
 | Docker Desktop | Engine 24+, Compose plugin |
 | AWS account | S3 bucket + IAM permissions |
 | Snowflake account | Trial account is sufficient |
-| Finnhub account | Free tier gives WebSocket access |
+| Finnhub account | Free tier supports both WebSocket and REST API |
 | Power BI Desktop | Windows; free to download |
 
 ---
@@ -339,7 +340,39 @@ SNOWFLAKE_USER=...
 SNOWFLAKE_PASSWORD=...
 AIRFLOW__CORE__FERNET_KEY=...   # from init.sh output
 AIRFLOW__WEBSERVER__SECRET_KEY=...  # any random string
+
+# Finnhub producer mode (choose one):
+FINNHUB_MODE=websocket           # Real-time streaming (default, for demo)
+# FINNHUB_MODE=polling           # 15-min intervals (for cost optimization)
+POLL_INTERVAL_MINUTES=15         # Only used in polling mode
 ```
+
+---
+
+### Step 2.1 — Choose Your Finnhub Data Mode
+
+The producer supports two modes:
+
+**🔴 WebSocket Mode (Default)**
+- **Best for:** Portfolio demonstration, real-time streaming showcase
+- **Data frequency:** Sub-second (every trade tick)
+- **Volume:** High (100K+ records/hour during active trading)
+- **Cost:** Higher S3 storage and Snowflake ingestion
+- **Config:** `FINNHUB_MODE=websocket` (already set)
+
+**🟢 REST API Polling Mode**
+- **Best for:** Cost optimization, hourly analytics focus
+- **Data frequency:** Every 15 minutes (configurable)
+- **Volume:** Low (4 records/hour per symbol)
+- **Cost:** Minimal S3 storage and Snowflake ingestion
+- **Config:** Change `FINNHUB_MODE=polling` in `.env`
+
+**To switch modes later:**
+1. Edit `.env` and change `FINNHUB_MODE=websocket` to `FINNHUB_MODE=polling` (or vice versa)
+2. Restart the producer: `docker compose restart finnhub-producer`
+3. Verify: `docker logs finnhub-producer --tail 10`
+
+> **Recommendation:** Start with WebSocket mode to see real-time data flowing. Switch to polling mode after your demo to reduce costs.
 
 ---
 
@@ -417,6 +450,10 @@ make ps
 ---
 
 ### Step 6 — Verify Data Is Flowing
+
+> **Note:** Data flow frequency depends on your `FINNHUB_MODE` setting:
+> - **WebSocket mode:** Expect messages every few seconds (real-time trades)
+> - **Polling mode:** New data arrives every 15 minutes (configurable)
 
 **Kafka** — check the topic has messages:
 ```bash

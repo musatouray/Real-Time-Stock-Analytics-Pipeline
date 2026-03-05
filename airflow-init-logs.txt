@@ -1,0 +1,72 @@
+﻿docker : 2026-03-05T12:47:02.728167Z [info     ] setup plugin alembic.autogenerate.schemas [alembic.runtime.plugins] 
+loc=plugins.py:37
+At line:1 char:1
++ docker logs airflow-init --tail 50 2>&1 | Out-File -FilePath airflow- ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (2026-03-05T12:4...c=plugins.py:37:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+DB: postgresql+psycopg2://admin:***@postgres/airflow_db
+Performing upgrade to the metadata database postgresql+psycopg2://admin:***@postgres/airflow_db
+Database migrating done!
+2026-03-05T12:47:02.729069Z [info     ] setup plugin alembic.autogenerate.tables [alembic.runtime.plugins] 
+loc=plugins.py:37
+2026-03-05T12:47:02.729784Z [info     ] setup plugin alembic.autogenerate.types [alembic.runtime.plugins] 
+loc=plugins.py:37
+2026-03-05T12:47:02.730163Z [info     ] setup plugin alembic.autogenerate.constraints [alembic.runtime.plugins] 
+loc=plugins.py:37
+2026-03-05T12:47:02.730422Z [info     ] setup plugin alembic.autogenerate.defaults [alembic.runtime.plugins] 
+loc=plugins.py:37
+2026-03-05T12:47:02.730748Z [info     ] setup plugin alembic.autogenerate.comments [alembic.runtime.plugins] 
+loc=plugins.py:37
+/home/airflow/.local/lib/python3.11/site-packages/airflow/providers/common/compat/security/permissions.py:30 
+RemovedInAirflow4Warning: The airflow.security.permissions module is deprecated; please see 
+https://airflow.apache.org/docs/apache-airflow/stable/security/deprecated_permissions.html
+2026-03-05T12:47:12.245959Z [info     ] Context impl PostgresqlImpl.   [alembic.runtime.migration] loc=migration.py:210
+2026-03-05T12:47:12.246350Z [info     ] Will assume transactional DDL. [alembic.runtime.migration] loc=migration.py:213
+2026-03-05T12:47:12.272430Z [info     ] Migrating the Airflow database [airflow.utils.db] loc=db.py:1129
+2026-03-05T12:47:12.296406Z [info     ] Context impl PostgresqlImpl.   [alembic.runtime.migration] loc=migration.py:210
+2026-03-05T12:47:12.296650Z [info     ] Will assume transactional DDL. [alembic.runtime.migration] loc=migration.py:213
+2026-03-05T12:47:12.468162Z [info     ] Context impl PostgresqlImpl.   [alembic.runtime.migration] loc=migration.py:210
+2026-03-05T12:47:12.468532Z [info     ] Will assume transactional DDL. [alembic.runtime.migration] loc=migration.py:213
+2026-03-05T12:47:12.511626Z [info     ] Context impl PostgresqlImpl.   [alembic.runtime.migration] loc=migration.py:210
+2026-03-05T12:47:12.511859Z [info     ] Will assume transactional DDL. [alembic.runtime.migration] loc=migration.py:213
+2026-03-05T12:47:16.053637Z [info     ] setup plugin alembic.autogenerate.schemas [alembic.runtime.plugins] 
+loc=plugins.py:37
+2026-03-05T12:47:16.053869Z [info     ] setup plugin alembic.autogenerate.tables [alembic.runtime.plugins] 
+loc=plugins.py:37
+2026-03-05T12:47:16.053987Z [info     ] setup plugin alembic.autogenerate.types [alembic.runtime.plugins] 
+loc=plugins.py:37
+2026-03-05T12:47:16.054120Z [info     ] setup plugin alembic.autogenerate.constraints [alembic.runtime.plugins] 
+loc=plugins.py:37
+2026-03-05T12:47:16.054238Z [info     ] setup plugin alembic.autogenerate.defaults [alembic.runtime.plugins] 
+loc=plugins.py:37
+2026-03-05T12:47:16.054358Z [info     ] setup plugin alembic.autogenerate.comments [alembic.runtime.plugins] 
+loc=plugins.py:37
+/home/airflow/.local/lib/python3.11/site-packages/airflow/providers/common/compat/security/permissions.py:30 
+RemovedInAirflow4Warning: The airflow.security.permissions module is deprecated; please see 
+https://airflow.apache.org/docs/apache-airflow/stable/security/deprecated_permissions.html
+/home/airflow/.local/lib/python3.11/site-packages/flask_limiter/extension.py:324 UserWarning: Using the in-memory 
+storage for tracking rate limits as no storage was explicitly specified. This is not recommended for production use. 
+See: https://flask-limiter.readthedocs.io#configuring-a-storage-backend for documentation about configuring the 
+storage backend.
+User "admin" created with role "Admin"
+2026-03-05T12:47:19.210631Z [warning  ] No user yet created, use flask fab command to do it. 
+[airflow.providers.fab.auth_manager.security_manager.override] loc=override.py:941
+2026-03-05T12:47:19.678674Z [info     ] Added user admin               
+[airflow.providers.fab.auth_manager.security_manager.override] loc=override.py:1401
+2026-03-05T12:47:25.634788Z [info     ] setup plugin alembic.autogenerate.schemas [alembic.runtime.plugins] 
+loc=plugins.py:37
+2026-03-05T12:47:25.635064Z [info     ] setup plugin alembic.autogenerate.tables [alembic.runtime.plugins] 
+loc=plugins.py:37
+2026-03-05T12:47:25.635286Z [info     ] setup plugin alembic.autogenerate.types [alembic.runtime.plugins] 
+loc=plugins.py:37
+2026-03-05T12:47:25.635514Z [info     ] setup plugin alembic.autogenerate.constraints [alembic.runtime.plugins] 
+loc=plugins.py:37
+2026-03-05T12:47:25.635700Z [info     ] setup plugin alembic.autogenerate.defaults [alembic.runtime.plugins] 
+loc=plugins.py:37
+2026-03-05T12:47:25.635887Z [info     ] setup plugin alembic.autogenerate.comments [alembic.runtime.plugins] 
+loc=plugins.py:37
+/home/airflow/.local/lib/python3.11/site-packages/airflow/providers/common/compat/security/permissions.py:30 
+RemovedInAirflow4Warning: The airflow.security.permissions module is deprecated; please see 
+https://airflow.apache.org/docs/apache-airflow/stable/security/deprecated_permissions.html
