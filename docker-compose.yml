@@ -229,6 +229,7 @@ services:
     env_file: .env
     volumes:
       - ./dbt:/usr/app/dbt
+      - dbt_venv:/usr/app/dbt/.venv  # Preserve venv from image build
     networks:
       - stock_net
     command: ["tail", "-f", "/dev/null"]   # keep alive; Airflow triggers dbt runs
@@ -241,6 +242,7 @@ volumes:
   zookeeper_log:
   kafka_data:
   postgres_data:
+  dbt_venv:
 
 # ─────────────────────────────────────────────────────────────
 # Network

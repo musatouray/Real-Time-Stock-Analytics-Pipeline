@@ -13,7 +13,7 @@
 | **Owner** | Amigomusa |
 | **Goal** | Portfolio project demonstrating end-to-end data engineering skills |
 | **End visualization** | Power BI (connected directly to Snowflake) |
-| **Last updated** | 2026-03-05 (Dual-mode Finnhub producer: WebSocket + REST API polling) |
+| **Last updated** | 2026-03-06 (Fixed dbt container volume mount + deprecated test syntax) |
 
 ---
 
@@ -255,6 +255,7 @@ scripts/init.sh / start.sh / stop.sh
 - **Postgres + Airflow credential alignment** — `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` in `.env` must match the credentials embedded in `AIRFLOW__DATABASE__SQL_ALCHEMY_CONN` and `AIRFLOW__CELERY__RESULT_BACKEND`; changing one requires changing both; if Postgres volume already exists with old credentials, run `docker compose down -v` to wipe and reinitialize
 - **Local dev**: `make dev-setup` creates per-service `.venv/` folders with full dev deps; point VS Code Python interpreter to the relevant `.venv`
 - **Never commit `.venv/`** — already in `.gitignore` via `**/.venv/`
+- **Running dbt commands** — use `docker compose exec dbt dbt <command> --project-dir /usr/app/dbt --profiles-dir /usr/app/dbt`; run `dbt deps` first after rebuilding the container; on Git Bash (Windows), use double slashes (`//usr/app/dbt`) or `MSYS_NO_PATHCONV=1` prefix to prevent path conversion; CMD/PowerShell work without modification
 - **ALWAYS update CLAUDE.md** — whenever ANY feature is added, changed, or removed, immediately update this file with: architecture changes, new configuration options, updated conventions, and change log entry; this is MANDATORY and non-negotiable
 
 ---
@@ -273,3 +274,4 @@ scripts/init.sh / start.sh / stop.sh
 | 2026-03-04 | Fixed Airflow 3 breaking changes: `webserver` → `api-server`; attempted `airflow fab create-user` (incorrect); `AIRFLOW__AUTH_MANAGER` → `AIRFLOW__CORE__AUTH_MANAGER`; `AIRFLOW__WEBSERVER__SECRET_KEY` → `AIRFLOW__API__SECRET_KEY` |
 | 2026-03-05 | Fixed Airflow user creation: corrected `airflow fab create-user` (non-existent in Airflow 3.1.7) → `airflow users create`; verified admin user creation from `AIRFLOW_WWW_USER_USERNAME` and `AIRFLOW_WWW_USER_PASSWORD` env vars |
 | 2026-03-05 | **Dual-mode Finnhub producer**: Implemented switchable WebSocket (real-time) and REST API (15-min polling) modes via `FINNHUB_MODE` env var; added `requests` dependency; updated `config.py`, `finnhub_producer.py`, `pyproject.toml`, `.env`, `.env.example`; regenerated lockfile; default mode is `websocket` for real-time streaming demo |
+| 2026-03-06 | Fixed dbt container: added `dbt_venv` named volume to preserve `.venv` from bind mount overwrite; updated deprecated `tests:` → `data_tests:` in `_staging.yml`, `_int_models.yml`, `_marts.yml` for dbt 1.8 compatibility; upgraded `dbt_utils` 1.1.1 → 1.3.3 and `audit_helper` 0.9.0 → 0.13.0 |

@@ -6,24 +6,24 @@ models:
     columns:
       - name: trade_id
         description: "Surrogate key: SHA2 hash of (symbol, timestamp, price, volume)"
-        tests:
+        data_tests:
           - unique
           - not_null
       - name: symbol
         description: "Stock ticker symbol (e.g., AAPL)"
-        tests:
+        data_tests:
           - not_null
       - name: price
         description: "Trade execution price in USD"
-        tests:
+        data_tests:
           - not_null
       - name: volume
         description: "Number of shares traded"
-        tests:
+        data_tests:
           - not_null
       - name: traded_at
         description: "UTC timestamp of trade execution"
-        tests:
+        data_tests:
           - not_null
       - name: conditions
         description: "Array of trade condition codes as a comma-separated string"
@@ -32,9 +32,9 @@ models:
     description: "Reference table of company metadata seeded from stock_symbols CSV"
     columns:
       - name: symbol
-        tests:
+        data_tests:
           - unique
           - not_null
       - name: company_name
-        tests:
+        data_tests:
           - not_null

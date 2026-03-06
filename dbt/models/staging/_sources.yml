@@ -11,5 +11,5 @@ sources:
         columns:
           - name: RECORD_CONTENT
             description: "Raw VARIANT column containing the full JSON trade record"
-          - name: RECORD_METADATA
-            description: "Snowpipe ingestion metadata (filename, row number, etc.)"
+       #   - name: RECORD_METADATA
+       #     description: "Snowpipe ingestion metadata (filename, row number, etc.)"

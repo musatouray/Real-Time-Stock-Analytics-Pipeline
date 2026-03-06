@@ -7,20 +7,20 @@ models:
       Used by the mart layer to build time-series fact tables.
     columns:
       - name: symbol
-        tests: [not_null]
+        data_tests: [not_null]
       - name: hour_bucket
         description: "Truncated to the hour: YYYY-MM-DD HH:00:00"
-        tests: [not_null]
+        data_tests: [not_null]
       - name: open_price
-        tests: [not_null]
+        data_tests: [not_null]
       - name: high_price
-        tests: [not_null]
+        data_tests: [not_null]
       - name: low_price
-        tests: [not_null]
+        data_tests: [not_null]
       - name: close_price
-        tests: [not_null]
+        data_tests: [not_null]
       - name: total_volume
-        tests: [not_null]
+        data_tests: [not_null]
 
   - name: int_stock_volatility
     description: >
