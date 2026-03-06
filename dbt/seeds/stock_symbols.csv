@@ -1,11 +1,11 @@
-symbol,company_name,sector,industry,exchange
-AAPL,Apple Inc.,Technology,Consumer Electronics,NASDAQ
-MSFT,Microsoft Corporation,Technology,Software—Infrastructure,NASDAQ
-GOOGL,Alphabet Inc.,Communication Services,Internet Content & Information,NASDAQ
-AMZN,Amazon.com Inc.,Consumer Cyclical,Internet Retail,NASDAQ
-TSLA,Tesla Inc.,Consumer Cyclical,Auto Manufacturers,NASDAQ
-META,Meta Platforms Inc.,Communication Services,Internet Content & Information,NASDAQ
-NVDA,NVIDIA Corporation,Technology,Semiconductors,NASDAQ
-JPM,JPMorgan Chase & Co.,Financial Services,Banks—Diversified,NYSE
-V,Visa Inc.,Financial Services,Credit Services,NYSE
-JNJ,Johnson & Johnson,Healthcare,Drug Manufacturers—General,NYSE
+symbol,company_name,sector,industry,exchange,logo_url
+AAPL,Apple Inc.,Technology,Consumer Electronics,NASDAQ,https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/AAPL.png
+MSFT,Microsoft Corporation,Technology,Software—Infrastructure,NASDAQ,https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/MSFT.png
+GOOGL,Alphabet Inc.,Communication Services,Internet Content & Information,NASDAQ,https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/GOOGL.png
+AMZN,Amazon.com Inc.,Consumer Cyclical,Internet Retail,NASDAQ,https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/AMZN.png
+TSLA,Tesla Inc.,Consumer Cyclical,Auto Manufacturers,NASDAQ,https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/TSLA.png
+META,Meta Platforms Inc.,Communication Services,Internet Content & Information,NASDAQ,https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/META.png
+NVDA,NVIDIA Corporation,Technology,Semiconductors,NASDAQ,https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/NVDA.png
+JPM,JPMorgan Chase & Co.,Financial Services,Banks—Diversified,NYSE,https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/JPM.png
+V,Visa Inc.,Financial Services,Credit Services,NYSE,https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/V.png
+JNJ,Johnson & Johnson,Healthcare,Drug Manufacturers—General,NYSE,https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/JNJ.png
