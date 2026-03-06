@@ -9,5 +9,6 @@ select
     company_name,
     sector,
     industry,
-    exchange
+    exchange,
+    logo_url
 from {{ ref('stock_symbols') }}

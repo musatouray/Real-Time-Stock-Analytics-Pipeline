@@ -11,6 +11,7 @@ select
     sector,
     industry,
     exchange,
+    logo_url,
     current_timestamp() as updated_at
 
 from {{ ref('stg_company_profiles') }}
