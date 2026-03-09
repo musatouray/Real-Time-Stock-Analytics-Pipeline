@@ -2,19 +2,17 @@
 # Shared environment
 # ─────────────────────────────────────────────────────────────
 x-airflow-common: &airflow-common
-  image: apache/airflow:3.1.7-python3.11
+  build:
+    context: ./airflow
+    dockerfile: Dockerfile
   env_file: .env
   environment:
-    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: ${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN}
-    AIRFLOW__CELERY__RESULT_BACKEND: ${AIRFLOW__CELERY__RESULT_BACKEND}
-    AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
     AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-    AIRFLOW__API__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY}
-    # Airflow 3: FAB auth manager enables `airflow fab create-user`
-    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY}
     PYTHONPATH: /opt/airflow/dags:/opt/airflow/plugins
   volumes:
     - ./airflow/dags:/opt/airflow/dags
@@ -22,10 +20,12 @@ x-airflow-common: &airflow-common
     - ./airflow/logs:/opt/airflow/logs
     - ./dbt:/usr/app/dbt
     - ./.env:/opt/airflow/.env:ro
+    # Docker socket for docker exec commands (Airflow runs dbt in dbt-runner container)
+    - /var/run/docker.sock:/var/run/docker.sock
   depends_on:
     postgres:
       condition: service_healthy
-    redis:
+    dbt:
       condition: service_healthy
   networks:
     - stock_net
@@ -185,12 +185,18 @@ services:
         airflow connections add 'aws_default' \
           --conn-type 'aws' \
           --conn-extra "{\"aws_access_key_id\": \"${AWS_ACCESS_KEY_ID}\", \"aws_secret_access_key\": \"${AWS_SECRET_ACCESS_KEY}\", \"region_name\": \"${AWS_REGION}\"}" || true
+        airflow connections add 'snowflake_default' \
+          --conn-type 'snowflake' \
+          --conn-login "${SNOWFLAKE_USER}" \
+          --conn-password "${SNOWFLAKE_PASSWORD}" \
+          --conn-schema "${SNOWFLAKE_SCHEMA}" \
+          --conn-extra "{\"account\": \"${SNOWFLAKE_ACCOUNT}\", \"warehouse\": \"${SNOWFLAKE_WAREHOUSE}\", \"database\": \"${SNOWFLAKE_DATABASE}\", \"role\": \"${SNOWFLAKE_ROLE}\"}" || true
     restart: on-failure
 
   airflow-webserver:
     <<: *airflow-common
     container_name: airflow-webserver
-    command: api-server
+    command: webserver
     ports:
       - "8081:8080"
     healthcheck:
@@ -206,11 +212,7 @@ services:
     command: scheduler
     restart: unless-stopped
 
-  airflow-worker:
-    <<: *airflow-common
-    container_name: airflow-worker
-    command: celery worker
-    restart: unless-stopped
+  # airflow-worker not needed with LocalExecutor - tasks run in scheduler process
 
   airflow-triggerer:
     <<: *airflow-common
@@ -227,12 +229,20 @@ services:
       dockerfile: Dockerfile
     container_name: dbt-runner
     env_file: .env
+    ports:
+      - "8082:8082"
     volumes:
       - ./dbt:/usr/app/dbt
       - dbt_venv:/usr/app/dbt/.venv  # Preserve venv from image build
     networks:
       - stock_net
     command: ["tail", "-f", "/dev/null"]   # keep alive; Airflow triggers dbt runs
+    healthcheck:
+      test: ["CMD", "dbt", "--version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
 # ─────────────────────────────────────────────────────────────
 # Volumes

@@ -3,16 +3,19 @@ stock_pipeline_dag.py
 ──────────────────────
 Orchestrates the end-to-end stock analytics pipeline:
 
-  1. health_check_kafka       — verify the Kafka broker is reachable
-  2. health_check_snowflake   — verify the Snowflake connection
-  3. verify_s3_new_files      — check that the consumer has uploaded files
-  4. trigger_snowpipe_refresh — call Snowpipe REST API to force ingest
-  5. dbt_run_staging          — dbt run for staging models
-  6. dbt_run_intermediate     — dbt run for intermediate models
-  7. dbt_run_marts            — dbt run for mart models
-  8. dbt_test                 — run dbt tests
+  1. health_check_snowflake   — verify the Snowflake connection
+  2. verify_s3_new_files      — check that the consumer has uploaded files
+  3. trigger_snowpipe_refresh — call Snowpipe REST API to force ingest
+  4. dbt_run_staging          — dbt run for staging models
+  5. dbt_run_intermediate     — dbt run for intermediate models
+  6. dbt_run_marts            — dbt run for mart models
+  7. dbt_test                 — run dbt tests
 
 Schedule: every hour
+
+Uses BashOperator with docker exec to run dbt commands in the persistent
+dbt-runner container, which has bind-mounted dbt project files and
+pre-loaded Snowflake credentials.
 """
 
 from __future__ import annotations
@@ -37,9 +40,8 @@ DEFAULT_ARGS = {
     "email_on_failure": False,
 }
 
-DBT_DIR = "/usr/app/dbt"
-DBT_CMD = f"dbt --no-use-colors run --project-dir {DBT_DIR} --profiles-dir {DBT_DIR}"
-DBT_TEST_CMD = f"dbt --no-use-colors test --project-dir {DBT_DIR} --profiles-dir {DBT_DIR}"
+DBT_CONTAINER = "dbt-runner"
+DBT_PROJECT_DIR = "/usr/app/dbt"
 
 S3_BUCKET = os.getenv("S3_BUCKET_NAME", "your-stock-analytics-bucket")
 S3_PREFIX = os.getenv("S3_RAW_PREFIX", "raw/trades/")
@@ -84,6 +86,19 @@ def trigger_snowpipe_refresh(**context):
     print("Snowpipe refresh triggered.")
 
 
+def dbt_exec_task(task_id: str, dbt_command: str) -> BashOperator:
+    """Run dbt command inside the persistent dbt-runner container."""
+    full_command = (
+        f"docker exec {DBT_CONTAINER} "
+        f"dbt --no-use-colors {dbt_command} "
+        f"--project-dir {DBT_PROJECT_DIR} --profiles-dir {DBT_PROJECT_DIR}"
+    )
+    return BashOperator(
+        task_id=task_id,
+        bash_command=full_command,
+    )
+
+
 # ─────────────────────────────────────────────────────────────
 # DAG definition
 # ─────────────────────────────────────────────────────────────
@@ -113,29 +128,10 @@ with DAG(
         python_callable=trigger_snowpipe_refresh,
     )
 
-    t_dbt_staging = BashOperator(
-        task_id="dbt_run_staging",
-        bash_command=f"{DBT_CMD} --select staging",
-        cwd=DBT_DIR,
-    )
-
-    t_dbt_intermediate = BashOperator(
-        task_id="dbt_run_intermediate",
-        bash_command=f"{DBT_CMD} --select intermediate",
-        cwd=DBT_DIR,
-    )
-
-    t_dbt_marts = BashOperator(
-        task_id="dbt_run_marts",
-        bash_command=f"{DBT_CMD} --select marts",
-        cwd=DBT_DIR,
-    )
-
-    t_dbt_test = BashOperator(
-        task_id="dbt_test",
-        bash_command=DBT_TEST_CMD,
-        cwd=DBT_DIR,
-    )
+    t_dbt_staging = dbt_exec_task("dbt_run_staging", "run --select staging")
+    t_dbt_intermediate = dbt_exec_task("dbt_run_intermediate", "run --select intermediate")
+    t_dbt_marts = dbt_exec_task("dbt_run_marts", "run --select marts")
+    t_dbt_test = dbt_exec_task("dbt_test", "test")
 
     # ── Dependencies ──────────────────────────────────────────
     [t_check_snowflake, t_verify_s3] >> t_snowpipe_refresh

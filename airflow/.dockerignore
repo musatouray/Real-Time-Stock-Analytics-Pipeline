@@ -1,0 +1,9 @@
+# Exclude runtime directories from build context
+dags/
+logs/
+plugins/
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.venv/

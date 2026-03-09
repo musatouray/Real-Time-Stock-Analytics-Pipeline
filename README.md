@@ -16,14 +16,13 @@ This project simulates a production-grade real-time analytics platform that a fi
 - **Orchestration** of the entire pipeline via scheduled Airflow DAGs
 - **Visualization** of business-ready mart tables in Power BI
 
-The stack mirrors what you would find at companies like Robinhood, Bloomberg, or any trading desk running a modern cloud data platform.
+The stack mirrors what you would find at any trading desk company running a modern cloud data platform.
 
 ---
 
 ## Business Questions & Deliverables
 
-The pipeline is designed to answer five real-world business questions that a portfolio manager, quant analyst, or trading desk would care about. Each question drives a dedicated Power BI report page.
-
+The pipeline is designed to answer five real-world business questions that a portfolio manager, quant analyst, or trading desk would care about.
 ---
 
 ### Q1 — Intraday Volatility Heatmap
@@ -81,7 +80,7 @@ The pipeline is designed to answer five real-world business questions that a por
 | Auto-ingestion | Snowflake Snowpipe (SQS) | Event-driven, zero-touch S3 → Snowflake |
 | Data warehouse | Snowflake | Cloud-native analytical SQL engine |
 | Transformation | dbt Core 1.8.2 + dbt-snowflake | Modular, tested SQL transformations |
-| Orchestration | Apache Airflow 3.1.7 | DAG scheduling, monitoring, alerting |
+| Orchestration | Apache Airflow 2.10.4 | DAG scheduling, monitoring, alerting |
 | Containerization | Docker Compose | Reproducible local environment |
 | Package manager | [uv](https://github.com/astral-sh/uv) (Astral) | Fast Rust-based pip replacement in all Docker images |
 | Visualization | Microsoft Power BI | Business dashboards via Snowflake connector |
@@ -107,16 +106,14 @@ The pipeline is designed to answer five real-world business questions that a por
 
 ## Development Approach
 
-This project was built using modern software engineering practices that mirror how data engineers work at leading tech companies in 2026.
+This project was built using modern data engineering practices that mirror how professional data engineers work at leading tech companies in 2026.
 
 ### AI-Assisted Development
-
-I used **Claude Code** (Anthropic's AI coding assistant) as a development accelerator — the same approach used by engineers at companies like Stripe, Replit, and modern startups. This is reflected in the `Co-Authored-By: Claude` git trailers, demonstrating transparent attribution of AI collaboration.
+I used **Claude Code** as a development accelerator to help me move 5x faster.
 
 **What this means:**
 - AI handled code scaffolding, boilerplate generation, and documentation formatting
-- **I designed** the architecture, made all technical decisions, and owned the business logic
-- AI helped me move 3-5x faster, similar to how GitHub Copilot or Cursor AI work
+- **I designed** the architecture, made the technical decisions, and owned the business logic
 
 ### My Core Contributions
 
@@ -134,22 +131,13 @@ I used **Claude Code** (Anthropic's AI coding assistant) as a development accele
 - Kafka topic partitioning and consumer micro-batching strategy
 - dbt project structure with custom macros and data quality tests
 
-**Debugging & Problem Solving:**
-- Diagnosed and fixed Airflow 3 breaking changes (`airflow users create` vs `airflow fab create-user`)
-- Configured uv package manager with proper virtual environment patterns in Docker
-- Wired all credentials through `.env` environment variables for security
-- Set up proper Postgres + Airflow credential alignment
-
 **Business Logic:**
 - Designed 5 analytical questions the pipeline answers for portfolio managers
 - Built dbt models for OHLCV aggregation, VWAP calculation, volatility metrics
 - Created data quality tests (unique constraints, not-null checks, positive volume assertions)
 
 ### The Bottom Line
-
-Think of this workflow like a senior engineer using Stack Overflow, documentation, and modern tooling — but 10x faster. I architected the system, made the hard decisions, and owned the implementation. AI helped me execute efficiently.
-
-**This is how modern data engineering is done.**
+I architected the system, made the hard decisions, and owned the implementation. AI helped me execute efficiently.
 
 ---
 
@@ -160,6 +148,8 @@ real_time_stock_analytics/
 │
 ├── CLAUDE.md                          # Claude Code project context (auto-updated)
 ├── README.md                          # This file
+├── IMPLEMENTATION_GUIDE.md            # Detailed step-by-step setup instructions
+├── INSTRUCTIONS.md                    # Complete execution guide (12 phases)
 ├── docker-compose.yml                 # All 12 services defined
 ├── .env.example                       # Template for all credentials
 ├── .gitignore
@@ -181,7 +171,7 @@ real_time_stock_analytics/
 │       └── Dockerfile
 │
 ├── airflow/
-│   ├── Dockerfile                     # Airflow 3.1.7 + providers (constraint-based)
+│   ├── Dockerfile                     # Airflow 2.10.4 + providers (constraint-based)
 │   ├── pyproject.toml                 # Providers + dev group (apache-airflow for IDE)
 │   ├── dags/
 │   │   ├── stock_pipeline_dag.py      # Hourly: S3 check → Snowpipe → dbt run → test
@@ -345,259 +335,45 @@ real_time_stock_analytics/
   dbt_transforms  [*/15 * * * *]   ← independent near-real-time mart refresh
 ```
 
----
 
-## Step-by-Step Implementation Guide
+
+## Quick Start
 
 ### Prerequisites
 
-| Requirement | Notes |
-|---|---|
-| Docker Desktop | Engine 24+, Compose plugin |
-| AWS account | S3 bucket + IAM permissions |
-| Snowflake account | Trial account is sufficient |
-| Finnhub account | Free tier supports both WebSocket and REST API |
-| Power BI Desktop | Windows; free to download |
+- Docker Desktop (Engine 24+)
+- AWS account with S3 access
+- Snowflake account (trial is fine)
+- Finnhub API key (free tier)
 
----
-
-### Step 1 — Clone & Bootstrap
+### Get Running in 5 Minutes
 
 ```bash
+# 1. Clone and bootstrap
 git clone <your-repo-url>
 cd real_time_stock_analytics
 bash scripts/init.sh
-```
 
-`init.sh` creates `.env` from `.env.example` and generates an Airflow Fernet key. Copy the Fernet key output into `.env`.
+# 2. Fill in credentials
+cp .env.example .env
+# Edit .env with your API keys and passwords
 
----
-
-### Step 2 — Fill in `.env` Credentials
-
-Open `.env` and populate every value:
-
-```bash
-# Minimum required before starting:
-FINNHUB_API_KEY=...
-AWS_ACCESS_KEY_ID=...
-AWS_SECRET_ACCESS_KEY=...
-S3_BUCKET_NAME=...
-SNOWFLAKE_ACCOUNT=...
-SNOWFLAKE_USER=...
-SNOWFLAKE_PASSWORD=...
-AIRFLOW__CORE__FERNET_KEY=...   # from init.sh output
-AIRFLOW__WEBSERVER__SECRET_KEY=...  # any random string
-
-# Finnhub producer mode (choose one):
-FINNHUB_MODE=websocket           # Real-time streaming (default, for demo)
-# FINNHUB_MODE=polling           # 15-min intervals (for cost optimization)
-POLL_INTERVAL_MINUTES=15         # Only used in polling mode
-```
-
----
-
-### Step 2.1 — Choose Your Finnhub Data Mode
-
-The producer supports two modes:
-
-**🔴 WebSocket Mode (Default)**
-- **Best for:** Portfolio demonstration, real-time streaming showcase
-- **Data frequency:** Sub-second (every trade tick)
-- **Volume:** High (100K+ records/hour during active trading)
-- **Cost:** Higher S3 storage and Snowflake ingestion
-- **Config:** `FINNHUB_MODE=websocket` (already set)
-
-**🟢 REST API Polling Mode**
-- **Best for:** Cost optimization, hourly analytics focus
-- **Data frequency:** Every 15 minutes (configurable)
-- **Volume:** Low (4 records/hour per symbol)
-- **Cost:** Minimal S3 storage and Snowflake ingestion
-- **Config:** Change `FINNHUB_MODE=polling` in `.env`
-
-**To switch modes later:**
-1. Edit `.env` and change `FINNHUB_MODE=websocket` to `FINNHUB_MODE=polling` (or vice versa)
-2. Restart the producer: `docker compose restart finnhub-producer`
-3. Verify: `docker logs finnhub-producer --tail 10`
-
-> **Recommendation:** Start with WebSocket mode to see real-time data flowing. Switch to polling mode after your demo to reduce costs.
-
----
-
-### Step 3 — Create the S3 Bucket
-
-In your AWS Console (or via CLI):
-
-```bash
-aws s3 mb s3://your-stock-analytics-bucket --region us-east-1
-
-# Enable versioning (optional but recommended)
-aws s3api put-bucket-versioning \
-  --bucket your-stock-analytics-bucket \
-  --versioning-configuration Status=Enabled
-```
-
----
-
-### Step 4 — Provision Snowflake (run scripts in order)
-
-Open a Snowflake worksheet and run the scripts in `snowflake/setup/` one by one:
-
-```
-01_roles_and_users.sql    → run as ACCOUNTADMIN
-02_warehouse.sql          → run as SYSADMIN
-03_database_schemas.sql   → run as SYSADMIN
-04_raw_tables.sql         → run as STOCK_ANALYTICS_ROLE
-05_s3_integration.sql     → run as ACCOUNTADMIN
-```
-
-After script 05, run this to get the IAM details:
-```sql
-DESC INTEGRATION STOCK_ANALYTICS_S3_INT;
-```
-Copy `STORAGE_AWS_IAM_USER_ARN` and `STORAGE_AWS_EXTERNAL_ID` into your AWS IAM role trust relationship.
-
-```
-06_stage_and_pipe.sql     → run as STOCK_ANALYTICS_ROLE
-```
-
-After script 06, get the SQS queue ARN:
-```sql
-SHOW PIPES LIKE 'TRADES_PIPE';
--- copy the notification_channel value
-```
-Go to your S3 bucket → Properties → Event notifications → Add notification:
-- Event type: `All object create events`
-- Prefix: `raw/trades/`
-- Destination: SQS → paste the ARN from above
-
-```
-07_grants.sql             → run as ACCOUNTADMIN
-```
-
----
-
-### Step 5 — Start All Services
-
-```bash
+# 3. Start all services
 make up
-# or for the first time with ordered startup:
-bash scripts/start.sh
+
+# 4. Verify everything is healthy
+docker compose ps
 ```
 
-Verify services are healthy:
-```bash
-make ps
-```
+| Service | URL |
+|---------|-----|
+| Airflow UI | http://localhost:8081 |
+| Kafka UI | http://localhost:8080 |
+| dbt Docs | http://localhost:8082 |
 
-| UI | URL | Credentials |
-|---|---|---|
-| Airflow | http://localhost:8081 | admin / admin |
-| Kafka UI | http://localhost:8080 | — |
-
----
-
-### Step 6 — Verify Data Is Flowing
-
-> **Note:** Data flow frequency depends on your `FINNHUB_MODE` setting:
-> - **WebSocket mode:** Expect messages every few seconds (real-time trades)
-> - **Polling mode:** New data arrives every 15 minutes (configurable)
-
-**Kafka** — check the topic has messages:
-```bash
-make kafka-topics
-# You should see: stock.trades
-```
-Open Kafka UI → Topics → `stock.trades` → Messages to see live trade events.
-
-**S3** — check files are landing:
-```bash
-aws s3 ls s3://your-stock-analytics-bucket/raw/trades/ --recursive | head -20
-```
-
-**Snowflake** — check Snowpipe is ingesting:
-```sql
-SELECT SYSTEM$PIPE_STATUS('STOCK_ANALYTICS_DB.RAW.TRADES_PIPE');
-SELECT COUNT(*) FROM STOCK_ANALYTICS_DB.RAW.STOCK_TRADES_RAW;
-```
-
----
-
-### Step 7 — Run dbt Transformations
-
-Seed reference data first:
-```bash
-docker compose exec dbt dbt seed \
-  --project-dir /usr/app/dbt --profiles-dir /usr/app/dbt
-```
-
-Run all models:
-```bash
-make dbt-run
-```
-
-Run tests:
-```bash
-make dbt-test
-```
-
-Generate and view docs:
-```bash
-make dbt-docs
-# Open http://localhost:8082
-```
-
----
-
-### Step 8 — Enable Airflow DAGs
-
-1. Open Airflow at http://localhost:8081
-2. Go to **DAGs**
-3. Toggle on `stock_analytics_pipeline` (hourly) and `dbt_transforms` (15 min)
-4. Trigger `stock_analytics_pipeline` manually for the first run
-5. Monitor task status in the **Grid** view
-
----
-
-### Step 9 — Connect Power BI to Snowflake
-
-1. Open **Power BI Desktop**
-2. **Get Data** → **Snowflake**
-3. Enter your Snowflake account URL (e.g., `xy12345.snowflakecomputing.com`)
-4. Database: `STOCK_ANALYTICS_DB` | Warehouse: `STOCK_ANALYTICS_WH`
-5. Authenticate with `STOCK_ANALYTICS_SVC` credentials
-6. Load these tables:
-   - `MARTS.FCT_STOCK_TRADES`
-   - `MARTS.FCT_STOCK_OHLCV_HOURLY`
-   - `MARTS.DIM_COMPANIES`
-7. Build your five dashboard pages (one per business question)
-8. Set **Direct Query** mode for near-real-time refresh
-
-> Tip: Use Power BI's **Auto Page Refresh** (available in Direct Query mode) to set a refresh interval matching your `dbt_transforms` schedule (15 minutes).
-
----
-
-### Step 10 — Monitoring & Maintenance
-
-```bash
-# Check Snowpipe copy history (Snowflake)
-# See snowflake/queries/monitoring_queries.sql
-
-# Tail all container logs
-make logs
-
-# Run ad-hoc dbt model
-docker compose exec dbt dbt run \
-  --select fct_stock_ohlcv_hourly \
-  --project-dir /usr/app/dbt \
-  --profiles-dir /usr/app/dbt
-
-# Stop everything (volumes preserved)
-bash scripts/stop.sh
-
-# Full teardown including volumes
-make down
-```
+> **Full setup instructions:**
+> - **[IMPLEMENTATION_GUIDE.md](IMPLEMENTATION_GUIDE.md)** — Condensed 10-step guide
+> - **[INSTRUCTIONS.md](INSTRUCTIONS.md)** — Complete 12-phase walkthrough with troubleshooting
 
 ---
 
