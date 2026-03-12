@@ -25,12 +25,16 @@ cleaned as (
         symbol,
         price,
         volume,
-        -- Convert Unix milliseconds to a proper timestamp
-        dateadd(
-            millisecond,
-            timestamp_ms,
-            '1970-01-01 00:00:00'::timestamp_ntz
-        ) as traded_at,
+        -- Convert Unix milliseconds to UTC timestamp, then to US/Eastern
+        convert_timezone(
+            'UTC',
+            'America/New_York',
+            dateadd(
+                millisecond,
+                timestamp_ms,
+                '1970-01-01 00:00:00'::timestamp_ntz
+            )
+        )::timestamp_ntz as traded_at,
         conditions_raw as conditions,
 
         -- Deterministic surrogate key for deduplication

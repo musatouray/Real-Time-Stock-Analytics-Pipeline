@@ -43,8 +43,9 @@ select
     t.price * t.volume  as trade_value_usd,
     t.conditions,
     t.traded_at,
-    date_trunc('hour', t.traded_at) as traded_hour,
-    date_trunc('day',  t.traded_at) as traded_date
+    date_trunc('hour', t.traded_at)::time as traded_hour,
+    t.traded_at::date as traded_date,
+    to_number(to_char(t.traded_at::date, 'YYYYMMDD')) as date_key
 
 from trades t
 left join companies c using (symbol)

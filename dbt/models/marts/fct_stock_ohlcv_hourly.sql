@@ -43,6 +43,8 @@ select
     c.sector,
     c.exchange,
     o.hour_bucket,
+    o.hour_bucket::date as traded_date,
+    o.hour_bucket::time as traded_hour,
     o.open_price,
     o.high_price,
     o.low_price,
@@ -56,7 +58,8 @@ select
     round(
         (o.close_price - o.open_price) / nullif(o.open_price, 0) * 100,
         4
-    ) as pct_change
+    ) as pct_change,
+    to_number(to_char(o.hour_bucket::date, 'YYYYMMDD')) as date_key
 
 from ohlcv o
 left join volatility v using (symbol, hour_bucket)
