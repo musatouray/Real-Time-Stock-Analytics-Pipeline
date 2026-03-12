@@ -1,0 +1,149 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.6.0/schema.json",
+  "name": "76ed9c76ae59009c39d7",
+  "position": {
+    "x": 760.25343403112174,
+    "y": 0,
+    "z": 1,
+    "height": 1080.2372142531299,
+    "width": 1131.6214709311166,
+    "tabOrder": 1
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Columns": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM_COMPANIES"
+                    }
+                  },
+                  "Property": "LOGO_URL"
+                }
+              },
+              "queryRef": "DIM_COMPANIES.LOGO_URL",
+              "nativeQueryRef": "LOGO_URL",
+              "active": true
+            }
+          ]
+        },
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FCT_STOCK_OHLCV_HOURLY"
+                    }
+                  },
+                  "Property": "HOUR_BUCKET"
+                }
+              },
+              "queryRef": "FCT_STOCK_OHLCV_HOURLY.HOUR_BUCKET",
+              "nativeQueryRef": "HOUR_BUCKET",
+              "active": true
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "FCT_STOCK_OHLCV_HOURLY"
+                        }
+                      },
+                      "Property": "STDDEV_PRICE"
+                    }
+                  },
+                  "Function": 0
+                }
+              },
+              "queryRef": "Sum(FCT_STOCK_OHLCV_HOURLY.STDDEV_PRICE)",
+              "nativeQueryRef": "Sum of STDDEV_PRICE"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "FCT_STOCK_OHLCV_HOURLY"
+                  }
+                },
+                "Property": "HOUR_BUCKET"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "5f1bee1c591777b08376",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "FCT_STOCK_OHLCV_HOURLY"
+              }
+            },
+            "Property": "HOUR_BUCKET"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "58fdfac89a027e32764b",
+        "field": {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "FCT_STOCK_OHLCV_HOURLY"
+                  }
+                },
+                "Property": "STDDEV_PRICE"
+              }
+            },
+            "Function": 0
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "0d5d9910ddbd07563a36",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "DIM_COMPANIES"
+              }
+            },
+            "Property": "LOGO_URL"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
+  }
+}

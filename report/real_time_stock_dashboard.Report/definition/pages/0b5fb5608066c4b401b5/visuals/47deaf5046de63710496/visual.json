@@ -1,0 +1,787 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.6.0/schema.json",
+  "name": "47deaf5046de63710496",
+  "position": {
+    "x": 285.7276091033504,
+    "y": 24.135029651781643,
+    "z": 0,
+    "height": 671.88808353185664,
+    "width": 970.85103147650671,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Columns": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM_COMPANIES"
+                    }
+                  },
+                  "Property": "LOGO_URL"
+                }
+              },
+              "queryRef": "DIM_COMPANIES.LOGO_URL",
+              "nativeQueryRef": "LOGO_URL",
+              "active": true
+            }
+          ]
+        },
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FCT_STOCK_OHLCV_HOURLY"
+                    }
+                  },
+                  "Property": "HOUR_BUCKET"
+                }
+              },
+              "queryRef": "FCT_STOCK_OHLCV_HOURLY.HOUR_BUCKET",
+              "nativeQueryRef": "HOUR_BUCKET",
+              "active": true
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "FCT_STOCK_OHLCV_HOURLY"
+                        }
+                      },
+                      "Property": "STDDEV_PRICE"
+                    }
+                  },
+                  "Function": 0
+                }
+              },
+              "queryRef": "Sum(FCT_STOCK_OHLCV_HOURLY.STDDEV_PRICE)",
+              "nativeQueryRef": "Sum of STDDEV_PRICE"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "FCT_STOCK_OHLCV_HOURLY"
+                  }
+                },
+                "Property": "HOUR_BUCKET"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "general": [
+        {
+          "properties": {
+            "layout": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Tabular'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "subTotals": [
+        {
+          "properties": {
+            "columnSubtotals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "rowSubtotals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "grid": [
+        {
+          "properties": {
+            "imageHeight": {
+              "expr": {
+                "Literal": {
+                  "Value": "50D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "72.6782346198837D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "scopeId": {
+                  "Comparison": {
+                    "ComparisonKind": 0,
+                    "Left": {
+                      "Column": {
+                        "Expression": {
+                          "SourceRef": {
+                            "Entity": "DIM_COMPANIES"
+                          }
+                        },
+                        "Property": "LOGO_URL"
+                      }
+                    },
+                    "Right": {
+                      "Literal": {
+                        "Value": "'https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/AAPL.png'"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "70.34258769590696D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "scopeId": {
+                  "Comparison": {
+                    "ComparisonKind": 0,
+                    "Left": {
+                      "Column": {
+                        "Expression": {
+                          "SourceRef": {
+                            "Entity": "DIM_COMPANIES"
+                          }
+                        },
+                        "Property": "LOGO_URL"
+                      }
+                    },
+                    "Right": {
+                      "Literal": {
+                        "Value": "'https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/AMZN.png'"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "74.23533256920153D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "scopeId": {
+                  "Comparison": {
+                    "ComparisonKind": 0,
+                    "Left": {
+                      "Column": {
+                        "Expression": {
+                          "SourceRef": {
+                            "Entity": "DIM_COMPANIES"
+                          }
+                        },
+                        "Property": "LOGO_URL"
+                      }
+                    },
+                    "Right": {
+                      "Literal": {
+                        "Value": "'https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/GOOGL.png'"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "77.34954916426102D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "scopeId": {
+                  "Comparison": {
+                    "ComparisonKind": 0,
+                    "Left": {
+                      "Column": {
+                        "Expression": {
+                          "SourceRef": {
+                            "Entity": "DIM_COMPANIES"
+                          }
+                        },
+                        "Property": "LOGO_URL"
+                      }
+                    },
+                    "Right": {
+                      "Literal": {
+                        "Value": "'https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/JNJ.png'"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "73.45676903885139D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "scopeId": {
+                  "Comparison": {
+                    "ComparisonKind": 0,
+                    "Left": {
+                      "Column": {
+                        "Expression": {
+                          "SourceRef": {
+                            "Entity": "DIM_COMPANIES"
+                          }
+                        },
+                        "Property": "LOGO_URL"
+                      }
+                    },
+                    "Right": {
+                      "Literal": {
+                        "Value": "'https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/JPM.png'"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "70.34258769590696D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "scopeId": {
+                  "Comparison": {
+                    "ComparisonKind": 0,
+                    "Left": {
+                      "Column": {
+                        "Expression": {
+                          "SourceRef": {
+                            "Entity": "DIM_COMPANIES"
+                          }
+                        },
+                        "Property": "LOGO_URL"
+                      }
+                    },
+                    "Right": {
+                      "Literal": {
+                        "Value": "'https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/META.png'"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "71.89968564522479D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "scopeId": {
+                  "Comparison": {
+                    "ComparisonKind": 0,
+                    "Left": {
+                      "Column": {
+                        "Expression": {
+                          "SourceRef": {
+                            "Entity": "DIM_COMPANIES"
+                          }
+                        },
+                        "Property": "LOGO_URL"
+                      }
+                    },
+                    "Right": {
+                      "Literal": {
+                        "Value": "'https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/MSFT.png'"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "76.57097949317827D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "scopeId": {
+                  "Comparison": {
+                    "ComparisonKind": 0,
+                    "Left": {
+                      "Column": {
+                        "Expression": {
+                          "SourceRef": {
+                            "Entity": "DIM_COMPANIES"
+                          }
+                        },
+                        "Property": "LOGO_URL"
+                      }
+                    },
+                    "Right": {
+                      "Literal": {
+                        "Value": "'https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/NVDA.png'"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "72.67822097392317D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "scopeId": {
+                  "Comparison": {
+                    "ComparisonKind": 0,
+                    "Left": {
+                      "Column": {
+                        "Expression": {
+                          "SourceRef": {
+                            "Entity": "DIM_COMPANIES"
+                          }
+                        },
+                        "Property": "LOGO_URL"
+                      }
+                    },
+                    "Right": {
+                      "Literal": {
+                        "Value": "'https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/TSLA.png'"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "71.89969944284069D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "scopeId": {
+                  "Comparison": {
+                    "ComparisonKind": 0,
+                    "Left": {
+                      "Column": {
+                        "Expression": {
+                          "SourceRef": {
+                            "Entity": "DIM_COMPANIES"
+                          }
+                        },
+                        "Property": "LOGO_URL"
+                      }
+                    },
+                    "Right": {
+                      "Literal": {
+                        "Value": "'https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/V.png'"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "columnHeaders": [
+        {
+          "properties": {
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Center'"
+                }
+              }
+            },
+            "titleAlignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Center'"
+                }
+              }
+            },
+            "outlineColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "ThemeDataColor": {
+                      "ColorId": 0,
+                      "Percent": -0.1
+                    }
+                  }
+                }
+              }
+            },
+            "outlineWeight": {
+              "expr": {
+                "Literal": {
+                  "Value": "3D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "columnFormatting": [
+        {
+          "properties": {
+            "styleHeader": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Center'"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Sum(FCT_STOCK_OHLCV_HOURLY.STDDEV_PRICE)"
+          }
+        }
+      ],
+      "rowHeaders": [
+        {
+          "properties": {
+            "outlineColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "ThemeDataColor": {
+                      "ColorId": 0,
+                      "Percent": -0.1
+                    }
+                  }
+                }
+              }
+            },
+            "outlineWeight": {
+              "expr": {
+                "Literal": {
+                  "Value": "3D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "values": [
+        {
+          "properties": {
+            "outlineColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "ThemeDataColor": {
+                      "ColorId": 0,
+                      "Percent": -0.1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "border": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "color": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "ThemeDataColor": {
+                      "ColorId": 0,
+                      "Percent": -0.1
+                    }
+                  }
+                }
+              }
+            },
+            "radius": {
+              "expr": {
+                "Literal": {
+                  "Value": "15D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "dropShadow": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "color": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "ThemeDataColor": {
+                      "ColorId": 0,
+                      "Percent": -0.1
+                    }
+                  }
+                }
+              }
+            },
+            "preset": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Custom'"
+                }
+              }
+            },
+            "transparency": {
+              "expr": {
+                "Literal": {
+                  "Value": "90D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "padding": [
+        {
+          "properties": {
+            "top": {
+              "expr": {
+                "Literal": {
+                  "Value": "15D"
+                }
+              }
+            },
+            "left": {
+              "expr": {
+                "Literal": {
+                  "Value": "15D"
+                }
+              }
+            },
+            "bottom": {
+              "expr": {
+                "Literal": {
+                  "Value": "5D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "stylePreset": [
+        {
+          "properties": {
+            "name": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Minimal'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "ae64aede275c40e40161",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "FCT_STOCK_OHLCV_HOURLY"
+              }
+            },
+            "Property": "HOUR_BUCKET"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "c1f10fe0036e0017da49",
+        "field": {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "FCT_STOCK_OHLCV_HOURLY"
+                  }
+                },
+                "Property": "STDDEV_PRICE"
+              }
+            },
+            "Function": 0
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "8bc393f17a1876d90c09",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "DIM_COMPANIES"
+              }
+            },
+            "Property": "LOGO_URL"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
+  }
+}

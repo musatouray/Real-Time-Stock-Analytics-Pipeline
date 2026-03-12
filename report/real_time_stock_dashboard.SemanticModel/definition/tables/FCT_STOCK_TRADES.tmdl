@@ -1,0 +1,121 @@
+table FCT_STOCK_TRADES
+	lineageTag: 8cc35b09-aa96-4155-9f04-0ba1e408c07b
+
+	column TRADE_ID
+		dataType: string
+		lineageTag: b20d4ddf-d8c1-4859-8b92-e5f6d4234d96
+		summarizeBy: none
+		sourceColumn: TRADE_ID
+
+		annotation SummarizationSetBy = Automatic
+
+	column SYMBOL
+		dataType: string
+		lineageTag: 04822078-6992-4f79-bd72-9658ef35aed9
+		summarizeBy: none
+		sourceColumn: SYMBOL
+
+		annotation SummarizationSetBy = Automatic
+
+	column COMPANY_NAME
+		dataType: string
+		lineageTag: 2ab9940c-0fc0-42d4-8769-2f2566455482
+		summarizeBy: none
+		sourceColumn: COMPANY_NAME
+
+		annotation SummarizationSetBy = Automatic
+
+	column SECTOR
+		dataType: string
+		lineageTag: efe397ff-ed80-4c5d-81e4-cc7e55577dc1
+		summarizeBy: none
+		sourceColumn: SECTOR
+
+		annotation SummarizationSetBy = Automatic
+
+	column EXCHANGE
+		dataType: string
+		lineageTag: 18013af4-cadc-4867-8f49-e6cf69f88992
+		summarizeBy: none
+		sourceColumn: EXCHANGE
+
+		annotation SummarizationSetBy = Automatic
+
+	column PRICE
+		dataType: double
+		lineageTag: 17af1e37-5bb2-4237-8c75-9e19e33d68df
+		summarizeBy: sum
+		sourceColumn: PRICE
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column VOLUME
+		dataType: double
+		lineageTag: 8b8a49ac-bc37-4709-9b8f-0c4bc97b4774
+		summarizeBy: sum
+		sourceColumn: VOLUME
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column TRADE_VALUE_USD
+		dataType: double
+		lineageTag: b991007a-df5c-4e19-82a7-27f0d6291f39
+		summarizeBy: sum
+		sourceColumn: TRADE_VALUE_USD
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column CONDITIONS
+		dataType: string
+		lineageTag: 1173c598-73ca-4df7-a964-eb86b36bb66e
+		summarizeBy: none
+		sourceColumn: CONDITIONS
+
+		annotation SummarizationSetBy = Automatic
+
+	column TRADED_AT
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 30fb485c-6b84-46d8-a020-ea2f5981ee14
+		summarizeBy: none
+		sourceColumn: TRADED_AT
+
+		annotation SummarizationSetBy = Automatic
+
+	column TRADED_HOUR
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: a29652fc-75a5-43ec-a347-a82a8e886185
+		summarizeBy: none
+		sourceColumn: TRADED_HOUR
+
+		annotation SummarizationSetBy = Automatic
+
+	column TRADED_DATE
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: c7a5eec1-2be8-451d-9da1-dfeb84568351
+		summarizeBy: none
+		sourceColumn: TRADED_DATE
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FCT_STOCK_TRADES = m
+		mode: import
+		source =
+				let
+				    Source = Snowflake.Databases("JDGAEPV-LHA81787.snowflakecomputing.com","STOCK_ANALYTICS_WH",[Implementation="1.0"]),
+				    STOCK_ANALYTICS_DB_Database = Source{[Name="STOCK_ANALYTICS_DB",Kind="Database"]}[Data],
+				    MARTS_Schema = STOCK_ANALYTICS_DB_Database{[Name="MARTS",Kind="Schema"]}[Data],
+				    FCT_STOCK_TRADES_Table = MARTS_Schema{[Name="FCT_STOCK_TRADES",Kind="Table"]}[Data]
+				in
+				    FCT_STOCK_TRADES_Table
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,61 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 523,
+            "y": 0
+          },
+          "nodeIndex": "DIM_COMPANIES",
+          "nodeLineageTag": "4e403a14-af18-4005-8329-7699c84369dd",
+          "size": {
+            "height": 248,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 327,
+            "y": 248
+          },
+          "nodeIndex": "FCT_STOCK_OHLCV_HOURLY",
+          "nodeLineageTag": "0e3171df-aa5a-49a2-8983-c2109231007c",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 793,
+            "y": 249
+          },
+          "nodeIndex": "FCT_STOCK_TRADES",
+          "nodeLineageTag": "8cc35b09-aa96-4155-9f04-0ba1e408c07b",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "All tables",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "All tables",
+  "defaultDiagram": "All tables"
+}

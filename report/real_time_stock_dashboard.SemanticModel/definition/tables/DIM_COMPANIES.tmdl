@@ -1,0 +1,74 @@
+table DIM_COMPANIES
+	lineageTag: 4e403a14-af18-4005-8329-7699c84369dd
+
+	column SYMBOL
+		dataType: string
+		lineageTag: 374f024b-3b65-4d67-969d-82a9d297aa79
+		summarizeBy: none
+		sourceColumn: SYMBOL
+
+		annotation SummarizationSetBy = Automatic
+
+	column COMPANY_NAME
+		dataType: string
+		lineageTag: 514a7314-da54-446f-8633-22f88e12d925
+		summarizeBy: none
+		sourceColumn: COMPANY_NAME
+
+		annotation SummarizationSetBy = Automatic
+
+	column SECTOR
+		dataType: string
+		lineageTag: 3a9026de-2520-469e-b80f-e85e6df1f5e1
+		summarizeBy: none
+		sourceColumn: SECTOR
+
+		annotation SummarizationSetBy = Automatic
+
+	column INDUSTRY
+		dataType: string
+		lineageTag: b53d1343-f49b-4cb1-b4c3-c38fba0f2063
+		summarizeBy: none
+		sourceColumn: INDUSTRY
+
+		annotation SummarizationSetBy = Automatic
+
+	column EXCHANGE
+		dataType: string
+		lineageTag: 7c2a0cd7-c075-4ca1-988f-935fb866dd55
+		summarizeBy: none
+		sourceColumn: EXCHANGE
+
+		annotation SummarizationSetBy = Automatic
+
+	column LOGO_URL
+		dataType: string
+		lineageTag: 385768ff-1263-43d4-8c1c-3b736c629ada
+		dataCategory: ImageUrl
+		summarizeBy: none
+		sourceColumn: LOGO_URL
+
+		annotation SummarizationSetBy = Automatic
+
+	column UPDATED_AT
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: fc9d506a-7b7f-419f-9a87-b3703ab566f2
+		summarizeBy: none
+		sourceColumn: UPDATED_AT
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DIM_COMPANIES = m
+		mode: import
+		source =
+				let
+				    Source = Snowflake.Databases("JDGAEPV-LHA81787.snowflakecomputing.com","STOCK_ANALYTICS_WH",[Implementation="1.0"]),
+				    STOCK_ANALYTICS_DB_Database = Source{[Name="STOCK_ANALYTICS_DB",Kind="Database"]}[Data],
+				    MARTS_Schema = STOCK_ANALYTICS_DB_Database{[Name="MARTS",Kind="Schema"]}[Data],
+				    DIM_COMPANIES_Table = MARTS_Schema{[Name="DIM_COMPANIES",Kind="Table"]}[Data]
+				in
+				    DIM_COMPANIES_Table
+
+	annotation PBI_ResultType = Table
+

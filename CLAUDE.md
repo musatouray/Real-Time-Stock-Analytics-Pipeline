@@ -13,7 +13,7 @@
 | **Owner** | Amigomusa |
 | **Goal** | Portfolio project demonstrating end-to-end data engineering skills |
 | **End visualization** | Power BI (connected directly to Snowflake) |
-| **Last updated** | 2026-03-09 (Fixed Airflow dbt execution, reorganized documentation) |
+| **Last updated** | 2026-03-12 (S3 partitioning by trade timestamp in US/Eastern) |
 
 ---
 
@@ -44,9 +44,9 @@ Finnhub API (dual-mode)
         ▼
   Kafka Consumer  (kafka/consumer/s3_consumer.py)
         │  micro-batch: 100 records OR 60 seconds
-        │  NDJSON files partitioned by year/month/day/hour
+        │  NDJSON files partitioned by trade timestamp (US/Eastern)
         ▼
-  AWS S3          s3://<bucket>/raw/trades/year=.../...
+  AWS S3          s3://<bucket>/raw/trades/year=.../...  (hours = ET market hours)
         │  SQS event notification
         ▼
   Snowpipe        AUTO_INGEST = TRUE
@@ -243,6 +243,7 @@ scripts/init.sh / start.sh / stop.sh
 - **Never add SQL prefixes to dbt schema names** — `generate_schema_name.sql` macro handles this
 - **Incremental models use MERGE** — unique keys are `trade_id` for trades, `(symbol, hour_bucket)` for OHLCV
 - **S3 files are NDJSON** — one JSON object per line, not a JSON array
+- **S3 partitioning is by trade timestamp in US/Eastern** — hour folders (hour=09 to hour=16) align with market hours; consumer extracts timestamp from each record (handles both WebSocket ms and Polling s formats) and groups by hour before writing; `zoneinfo.ZoneInfo("America/New_York")` handles EST/EDT transitions automatically
 - **Kafka internal listener is `kafka:29092`** — external is `localhost:9092`; use the internal one inside Docker
 - **Finnhub producer modes** — supports dual-mode operation via `FINNHUB_MODE` env var: `websocket` (real-time streaming, default) or `polling` (REST API every 15 mins); switch modes by editing `.env` and running `docker compose up -d --force-recreate finnhub-producer`
 - **US market hours** — Regular trading: 9:30 AM - 4:00 PM ET (14:30 - 21:00 UTC); WebSocket mode only produces data during market hours; polling mode returns data 24/7 but `timestamp` field reflects last trade time (stale on weekends/holidays)
@@ -287,3 +288,4 @@ scripts/init.sh / start.sh / stop.sh
 | 2026-03-08 | **Downgraded Airflow 3.1.7 → 2.10.4**: Airflow 3.1.7's Task SDK requires an Execution API that doesn't work (returns 404), breaking both CeleryExecutor and LocalExecutor; Airflow 2.10.4 uses stable, proven execution model; updated Dockerfile, pyproject.toml, docker-compose.yml (webserver command, healthcheck URL, removed Airflow 3-specific config); fixed DAG imports from `airflow.providers.standard.operators` → `airflow.operators` |
 | 2026-03-09 | **Replaced DockerOperator with BashOperator + docker exec**: DockerOperator spawned ephemeral containers without bind-mounted dbt files, causing "Connection refused" errors; solution: use `BashOperator` with `docker exec dbt-runner` to run dbt commands in the persistent dbt container; added `docker.io` to Airflow Dockerfile; added dbt healthcheck + depends_on; added `snowflake_default` connection to `airflow-init`; removed `apache-airflow-providers-docker` (no longer needed) |
 | 2026-03-09 | **Documentation reorganization**: Split README.md step-by-step guide into `IMPLEMENTATION_GUIDE.md` (condensed 10-step) and `INSTRUCTIONS.md` (complete 12-phase walkthrough with TOC and troubleshooting); added market hours documentation; fixed Airflow version references (3.1.7 → 2.10.4); documented `--force-recreate` requirement for env var changes |
+| 2026-03-12 | **S3 partitioning fix**: Changed S3 consumer to partition by trade timestamp in US/Eastern timezone instead of flush time in UTC; records now land in correct market-hour partitions (hour=09 to hour=16) for Power BI heatmaps; handles both WebSocket (ms) and Polling (s) timestamp formats; uses Python `zoneinfo` (no new dependencies) |

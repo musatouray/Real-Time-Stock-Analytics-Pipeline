@@ -1,0 +1,156 @@
+table FCT_STOCK_OHLCV_HOURLY
+	lineageTag: 0e3171df-aa5a-49a2-8983-c2109231007c
+
+	column SYMBOL
+		dataType: string
+		lineageTag: 13c7c7e0-cd74-4c16-b52a-cdc70a5b8c83
+		summarizeBy: none
+		sourceColumn: SYMBOL
+
+		annotation SummarizationSetBy = Automatic
+
+	column COMPANY_NAME
+		dataType: string
+		lineageTag: 50f2b3a7-5307-403e-93cb-e7e55a2b1ab7
+		summarizeBy: none
+		sourceColumn: COMPANY_NAME
+
+		annotation SummarizationSetBy = Automatic
+
+	column SECTOR
+		dataType: string
+		lineageTag: 906b4213-9c2b-4061-bd01-5fe6894185c1
+		summarizeBy: none
+		sourceColumn: SECTOR
+
+		annotation SummarizationSetBy = Automatic
+
+	column EXCHANGE
+		dataType: string
+		lineageTag: f9657df1-a5a4-40b2-89d2-13afb3d147a1
+		summarizeBy: none
+		sourceColumn: EXCHANGE
+
+		annotation SummarizationSetBy = Automatic
+
+	column HOUR_BUCKET
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: c48d56b0-682e-4dc3-9a28-4d3f62c0af12
+		summarizeBy: none
+		sourceColumn: HOUR_BUCKET
+
+		annotation SummarizationSetBy = Automatic
+
+	column OPEN_PRICE
+		dataType: double
+		lineageTag: 02103a5c-3136-4b55-8fa3-7a61d89c03c8
+		summarizeBy: sum
+		sourceColumn: OPEN_PRICE
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column HIGH_PRICE
+		dataType: double
+		lineageTag: 1809f490-f9f2-454a-944a-fbe3af2c7b14
+		summarizeBy: sum
+		sourceColumn: HIGH_PRICE
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column LOW_PRICE
+		dataType: double
+		lineageTag: be95c611-aee3-4b6b-8e4f-59c7f8f68d81
+		summarizeBy: sum
+		sourceColumn: LOW_PRICE
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column CLOSE_PRICE
+		dataType: double
+		lineageTag: f1bda740-ddb3-4f3c-92df-1a9e9c1bf2ed
+		summarizeBy: sum
+		sourceColumn: CLOSE_PRICE
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column TOTAL_VOLUME
+		dataType: double
+		lineageTag: ca6dfb52-9f6f-4b95-9277-cce21ea5b5f4
+		summarizeBy: sum
+		sourceColumn: TOTAL_VOLUME
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column TRADE_COUNT
+		dataType: double
+		lineageTag: 3ed49e2a-038c-4734-b37e-028780431693
+		summarizeBy: sum
+		sourceColumn: TRADE_COUNT
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column VWAP
+		dataType: double
+		lineageTag: b321f0a2-c155-443c-97ea-c40d18134453
+		summarizeBy: sum
+		sourceColumn: VWAP
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column STDDEV_PRICE
+		dataType: double
+		lineageTag: 0d560c83-b8e7-4193-8f83-9d7843bea5d2
+		summarizeBy: sum
+		sourceColumn: STDDEV_PRICE
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column PRICE_RANGE
+		dataType: double
+		lineageTag: 3a665413-425d-47af-9a58-8650019c5de3
+		summarizeBy: sum
+		sourceColumn: PRICE_RANGE
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column PCT_CHANGE
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: a29bd5ef-18be-4997-8ecf-b4ed8153a0a2
+		summarizeBy: average
+		sourceColumn: PCT_CHANGE
+
+		annotation SummarizationSetBy = User
+
+	partition FCT_STOCK_OHLCV_HOURLY = m
+		mode: import
+		source =
+				let
+				    Source = Snowflake.Databases("JDGAEPV-LHA81787.snowflakecomputing.com","STOCK_ANALYTICS_WH",[Implementation="1.0"]),
+				    STOCK_ANALYTICS_DB_Database = Source{[Name="STOCK_ANALYTICS_DB",Kind="Database"]}[Data],
+				    MARTS_Schema = STOCK_ANALYTICS_DB_Database{[Name="MARTS",Kind="Schema"]}[Data],
+				    FCT_STOCK_OHLCV_HOURLY_Table = MARTS_Schema{[Name="FCT_STOCK_OHLCV_HOURLY",Kind="Table"]}[Data]
+				in
+				    FCT_STOCK_OHLCV_HOURLY_Table
+
+	annotation PBI_ResultType = Table
+

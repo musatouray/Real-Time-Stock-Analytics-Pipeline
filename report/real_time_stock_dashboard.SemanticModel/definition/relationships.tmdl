@@ -1,0 +1,8 @@
+relationship 0b55bd86-ce5f-d095-05dc-add296a909e5
+	fromColumn: FCT_STOCK_OHLCV_HOURLY.COMPANY_NAME
+	toColumn: DIM_COMPANIES.COMPANY_NAME
+
+relationship aff84c5d-6255-edb5-3adc-42f787b9fa77
+	fromColumn: FCT_STOCK_TRADES.COMPANY_NAME
+	toColumn: DIM_COMPANIES.COMPANY_NAME
+
