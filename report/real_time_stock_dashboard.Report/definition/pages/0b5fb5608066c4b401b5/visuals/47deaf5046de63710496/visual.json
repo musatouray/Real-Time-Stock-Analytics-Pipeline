@@ -3,9 +3,9 @@
   "name": "47deaf5046de63710496",
   "position": {
     "x": 285.7276091033504,
-    "y": 24.135029651781643,
+    "y": 63.841046175680468,
     "z": 0,
-    "height": 671.88808353185664,
+    "height": 632.18206700795781,
     "width": 970.85103147650671,
     "tabOrder": 0
   },
@@ -20,7 +20,7 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "DIM_COMPANIES"
+                      "Entity": "dim_companies"
                     }
                   },
                   "Property": "LOGO_URL"
@@ -39,14 +39,14 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "FCT_STOCK_OHLCV_HOURLY"
+                      "Entity": "fct_stock_ohlcv_hourly"
                     }
                   },
-                  "Property": "HOUR_BUCKET"
+                  "Property": "TRADED_HOUR"
                 }
               },
-              "queryRef": "FCT_STOCK_OHLCV_HOURLY.HOUR_BUCKET",
-              "nativeQueryRef": "HOUR_BUCKET",
+              "queryRef": "fct_stock_ohlcv_hourly.TRADED_HOUR",
+              "nativeQueryRef": "TRADED_HOUR",
               "active": true
             }
           ]
@@ -60,7 +60,7 @@
                     "Column": {
                       "Expression": {
                         "SourceRef": {
-                          "Entity": "FCT_STOCK_OHLCV_HOURLY"
+                          "Entity": "fct_stock_ohlcv_hourly"
                         }
                       },
                       "Property": "STDDEV_PRICE"
@@ -82,7 +82,7 @@
               "Column": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "FCT_STOCK_OHLCV_HOURLY"
+                    "Entity": "fct_stock_ohlcv_hourly"
                   }
                 },
                 "Property": "HOUR_BUCKET"
@@ -161,7 +161,7 @@
                       "Column": {
                         "Expression": {
                           "SourceRef": {
-                            "Entity": "DIM_COMPANIES"
+                            "Entity": "dim_companies"
                           }
                         },
                         "Property": "LOGO_URL"
@@ -198,7 +198,7 @@
                       "Column": {
                         "Expression": {
                           "SourceRef": {
-                            "Entity": "DIM_COMPANIES"
+                            "Entity": "dim_companies"
                           }
                         },
                         "Property": "LOGO_URL"
@@ -235,7 +235,7 @@
                       "Column": {
                         "Expression": {
                           "SourceRef": {
-                            "Entity": "DIM_COMPANIES"
+                            "Entity": "dim_companies"
                           }
                         },
                         "Property": "LOGO_URL"
@@ -272,7 +272,7 @@
                       "Column": {
                         "Expression": {
                           "SourceRef": {
-                            "Entity": "DIM_COMPANIES"
+                            "Entity": "dim_companies"
                           }
                         },
                         "Property": "LOGO_URL"
@@ -309,7 +309,7 @@
                       "Column": {
                         "Expression": {
                           "SourceRef": {
-                            "Entity": "DIM_COMPANIES"
+                            "Entity": "dim_companies"
                           }
                         },
                         "Property": "LOGO_URL"
@@ -346,7 +346,7 @@
                       "Column": {
                         "Expression": {
                           "SourceRef": {
-                            "Entity": "DIM_COMPANIES"
+                            "Entity": "dim_companies"
                           }
                         },
                         "Property": "LOGO_URL"
@@ -383,7 +383,7 @@
                       "Column": {
                         "Expression": {
                           "SourceRef": {
-                            "Entity": "DIM_COMPANIES"
+                            "Entity": "dim_companies"
                           }
                         },
                         "Property": "LOGO_URL"
@@ -420,7 +420,7 @@
                       "Column": {
                         "Expression": {
                           "SourceRef": {
-                            "Entity": "DIM_COMPANIES"
+                            "Entity": "dim_companies"
                           }
                         },
                         "Property": "LOGO_URL"
@@ -457,7 +457,7 @@
                       "Column": {
                         "Expression": {
                           "SourceRef": {
-                            "Entity": "DIM_COMPANIES"
+                            "Entity": "dim_companies"
                           }
                         },
                         "Property": "LOGO_URL"
@@ -494,7 +494,7 @@
                       "Column": {
                         "Expression": {
                           "SourceRef": {
-                            "Entity": "DIM_COMPANIES"
+                            "Entity": "dim_companies"
                           }
                         },
                         "Property": "LOGO_URL"
@@ -644,7 +644,7 @@
             "radius": {
               "expr": {
                 "Literal": {
-                  "Value": "15D"
+                  "Value": "5D"
                 }
               }
             }
@@ -736,28 +736,28 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "ae64aede275c40e40161",
+        "name": "ed18797d0b0a36a09069",
         "field": {
           "Column": {
             "Expression": {
               "SourceRef": {
-                "Entity": "FCT_STOCK_OHLCV_HOURLY"
+                "Entity": "dim_companies"
               }
             },
-            "Property": "HOUR_BUCKET"
+            "Property": "LOGO_URL"
           }
         },
         "type": "Categorical"
       },
       {
-        "name": "c1f10fe0036e0017da49",
+        "name": "63fe7142d52445b21576",
         "field": {
           "Aggregation": {
             "Expression": {
               "Column": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "FCT_STOCK_OHLCV_HOURLY"
+                    "Entity": "fct_stock_ohlcv_hourly"
                   }
                 },
                 "Property": "STDDEV_PRICE"
@@ -769,15 +769,15 @@
         "type": "Advanced"
       },
       {
-        "name": "8bc393f17a1876d90c09",
+        "name": "88673164493d80d00a19",
         "field": {
           "Column": {
             "Expression": {
               "SourceRef": {
-                "Entity": "DIM_COMPANIES"
+                "Entity": "fct_stock_ohlcv_hourly"
               }
             },
-            "Property": "LOGO_URL"
+            "Property": "TRADED_HOUR"
           }
         },
         "type": "Categorical"

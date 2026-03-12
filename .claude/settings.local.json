@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(git checkout:*)",
+      "Bash(docker compose exec dbt dbt seed:*)",
+      "Bash(powershell:*)"
     ]
   }
 }

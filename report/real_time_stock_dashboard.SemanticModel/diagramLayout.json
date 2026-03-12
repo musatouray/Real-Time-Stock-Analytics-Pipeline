@@ -10,42 +10,55 @@
       "nodes": [
         {
           "location": {
-            "x": 523,
-            "y": 0
+            "x": 766,
+            "y": 2
           },
-          "nodeIndex": "DIM_COMPANIES",
+          "nodeIndex": "dim_companies",
           "nodeLineageTag": "4e403a14-af18-4005-8329-7699c84369dd",
           "size": {
             "height": 248,
             "width": 234
           },
-          "zIndex": 0
+          "zIndex": 4
         },
         {
           "location": {
-            "x": 327,
-            "y": 248
+            "x": 304,
+            "y": 399
           },
-          "nodeIndex": "FCT_STOCK_OHLCV_HOURLY",
+          "nodeIndex": "fct_stock_ohlcv_hourly",
           "nodeLineageTag": "0e3171df-aa5a-49a2-8983-c2109231007c",
           "size": {
             "height": 300,
             "width": 234
           },
-          "zIndex": 0
+          "zIndex": 1
         },
         {
           "location": {
-            "x": 793,
-            "y": 249
+            "x": 708,
+            "y": 403
           },
-          "nodeIndex": "FCT_STOCK_TRADES",
+          "nodeIndex": "fct_stock_trades",
           "nodeLineageTag": "8cc35b09-aa96-4155-9f04-0ba1e408c07b",
           "size": {
             "height": 300,
             "width": 234
           },
-          "zIndex": 0
+          "zIndex": 2
+        },
+        {
+          "location": {
+            "x": 331,
+            "y": 0
+          },
+          "nodeIndex": "dim_date",
+          "nodeLineageTag": "4b305160-b680-4ca7-8174-bba6816e239e",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 3
         }
       ],
       "name": "All tables",

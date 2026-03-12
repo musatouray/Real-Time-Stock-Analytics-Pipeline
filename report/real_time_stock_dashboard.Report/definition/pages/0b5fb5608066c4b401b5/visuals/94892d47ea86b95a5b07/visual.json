@@ -2,15 +2,15 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.6.0/schema.json",
   "name": "94892d47ea86b95a5b07",
   "position": {
-    "x": 41.263115211110545,
-    "y": 23.356480308175783,
-    "z": 1,
-    "height": 155.70986872117189,
-    "width": 206.31557605555275,
-    "tabOrder": 1
+    "x": 285.7276091033504,
+    "y": 13.23533884129961,
+    "z": 1000,
+    "height": 58.391200770439454,
+    "width": 970.85103147650671,
+    "tabOrder": 1000
   },
   "visual": {
-    "visualType": "slicer",
+    "visualType": "advancedSlicerVisual",
     "query": {
       "queryState": {
         "Values": {
@@ -20,15 +20,14 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "FCT_STOCK_OHLCV_HOURLY"
+                      "Entity": "fct_stock_ohlcv_hourly"
                     }
                   },
-                  "Property": "HOUR_BUCKET"
+                  "Property": "TRADED_HOUR"
                 }
               },
-              "queryRef": "FCT_STOCK_OHLCV_HOURLY.HOUR_BUCKET",
-              "nativeQueryRef": "HOUR_BUCKET",
-              "active": true
+              "queryRef": "fct_stock_ohlcv_hourly.TRADED_HOUR",
+              "nativeQueryRef": "TRADED_HOUR"
             }
           ]
         }
@@ -40,108 +39,144 @@
               "Column": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "FCT_STOCK_OHLCV_HOURLY"
+                    "Entity": "fct_stock_ohlcv_hourly"
                   }
                 },
-                "Property": "HOUR_BUCKET"
+                "Property": "TRADED_HOUR"
               }
             },
             "direction": "Ascending"
           }
-        ]
+        ],
+        "isDefaultSort": true
       }
     },
     "objects": {
       "data": [
         {
+          "properties": {}
+        }
+      ],
+      "general": [
+        {
+          "properties": {}
+        }
+      ],
+      "layout": [
+        {
           "properties": {
-            "startDate": {
+            "orientation": {
               "expr": {
                 "Literal": {
-                  "Value": "datetime'2026-03-09T00:00:00'"
+                  "Value": "2D"
                 }
               }
             },
-            "endDate": {
+            "maxTiles": {
               "expr": {
                 "Literal": {
-                  "Value": "datetime'2026-03-11T00:00:00'"
+                  "Value": "12L"
                 }
               }
             },
-            "mode": {
+            "style": {
               "expr": {
                 "Literal": {
-                  "Value": "'Between'"
+                  "Value": "'Table'"
+                }
+              }
+            },
+            "lineTransparency": {
+              "expr": {
+                "Literal": {
+                  "Value": "100D"
                 }
               }
             }
           }
         }
       ],
-      "general": [
+      "overFlow": [
         {
           "properties": {
-            "filter": {
-              "filter": {
-                "Version": 2,
-                "From": [
-                  {
-                    "Name": "f",
-                    "Entity": "FCT_STOCK_OHLCV_HOURLY",
-                    "Type": 0
-                  }
-                ],
-                "Where": [
-                  {
-                    "Condition": {
-                      "And": {
-                        "Left": {
-                          "Comparison": {
-                            "ComparisonKind": 2,
-                            "Left": {
-                              "Column": {
-                                "Expression": {
-                                  "SourceRef": {
-                                    "Source": "f"
-                                  }
-                                },
-                                "Property": "HOUR_BUCKET"
-                              }
-                            },
-                            "Right": {
-                              "Literal": {
-                                "Value": "datetime'2026-03-09T00:00:00'"
-                              }
-                            }
-                          }
-                        },
-                        "Right": {
-                          "Comparison": {
-                            "ComparisonKind": 3,
-                            "Left": {
-                              "Column": {
-                                "Expression": {
-                                  "SourceRef": {
-                                    "Source": "f"
-                                  }
-                                },
-                                "Property": "HOUR_BUCKET"
-                              }
-                            },
-                            "Right": {
-                              "Literal": {
-                                "Value": "datetime'2026-03-12T00:00:00'"
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                ]
+            "overFlowDirection": {
+              "expr": {
+                "Literal": {
+                  "Value": "1D"
+                }
               }
             }
+          }
+        }
+      ],
+      "outline": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          },
+          "selector": {
+            "id": "default"
+          }
+        }
+      ],
+      "value": [
+        {
+          "properties": {
+            "horizontalAlignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'center'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "10D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "id": "default"
+          }
+        }
+      ],
+      "padding": [
+        {
+          "properties": {
+            "paddingSelection": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Narrow'"
+                }
+              }
+            }
+          },
+          "selector": {
+            "id": "default"
+          }
+        }
+      ],
+      "fillCustom": [
+        {
+          "properties": {
+            "transparency": {
+              "expr": {
+                "Literal": {
+                  "Value": "66D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "id": "default"
           }
         }
       ]
@@ -156,6 +191,13 @@
                   "Value": "true"
                 }
               }
+            },
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
             }
           }
         }
@@ -166,14 +208,14 @@
             "show": {
               "expr": {
                 "Literal": {
-                  "Value": "true"
+                  "Value": "false"
                 }
               }
             },
             "transparency": {
               "expr": {
                 "Literal": {
-                  "Value": "0D"
+                  "Value": "66D"
                 }
               }
             }
@@ -186,7 +228,7 @@
             "top": {
               "expr": {
                 "Literal": {
-                  "Value": "15D"
+                  "Value": "5D"
                 }
               }
             },
@@ -200,7 +242,7 @@
             "left": {
               "expr": {
                 "Literal": {
-                  "Value": "15D"
+                  "Value": "5D"
                 }
               }
             }
@@ -213,7 +255,7 @@
             "show": {
               "expr": {
                 "Literal": {
-                  "Value": "true"
+                  "Value": "false"
                 }
               }
             },
@@ -232,7 +274,7 @@
             "radius": {
               "expr": {
                 "Literal": {
-                  "Value": "15D"
+                  "Value": "5D"
                 }
               }
             },
@@ -291,7 +333,7 @@
             "name": {
               "expr": {
                 "Literal": {
-                  "Value": "'Minimal'"
+                  "Value": "''"
                 }
               }
             }
@@ -300,23 +342,5 @@
       ]
     },
     "drillFilterOtherVisuals": true
-  },
-  "filterConfig": {
-    "filters": [
-      {
-        "name": "2891fb83133472457676",
-        "field": {
-          "Column": {
-            "Expression": {
-              "SourceRef": {
-                "Entity": "FCT_STOCK_OHLCV_HOURLY"
-              }
-            },
-            "Property": "HOUR_BUCKET"
-          }
-        },
-        "type": "Categorical"
-      }
-    ]
   }
 }

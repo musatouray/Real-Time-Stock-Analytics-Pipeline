@@ -1,0 +1,145 @@
+table dim_date
+	lineageTag: 4b305160-b680-4ca7-8174-bba6816e239e
+	description: "Calendar dimension table for date-based filtering and aggregation. Grain: one row per calendar day. Contains fiscal attributes and trading day flags for market analysis."
+
+	column DATE_KEY
+		dataType: double
+		lineageTag: 000f9563-4000-4801-9ad1-b43628f726e8
+		summarizeBy: none
+		sourceColumn: DATE_KEY
+		description: "Integer date key in YYYYMMDD format (e.g., 20260312). Primary key for joining to fact tables."
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column DATE
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: db6976b8-3804-4386-90fc-f92a1f423066
+		summarizeBy: none
+		sourceColumn: DATE
+		description: "Calendar date value. Use for date slicers and time intelligence."
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column YEAR
+		dataType: double
+		lineageTag: d2108909-ef1e-4c25-b7b9-39ac63d1a36b
+		summarizeBy: sum
+		sourceColumn: YEAR
+		description: "Four-digit year (e.g., 2026). Use for year-over-year comparisons."
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column QUARTER
+		dataType: double
+		lineageTag: acaade56-3eef-4a21-acf5-df19431e439d
+		summarizeBy: sum
+		sourceColumn: QUARTER
+		description: "Calendar quarter (1-4). Use for quarterly aggregations."
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column MONTH
+		dataType: double
+		lineageTag: 68ff40c9-73e8-48e6-b5ae-9bfe1c72923a
+		summarizeBy: sum
+		sourceColumn: MONTH
+		description: "Month number (1-12). Use for monthly aggregations."
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column MONTH_NAME
+		dataType: string
+		lineageTag: f2079eaa-e2de-4100-9c32-b7338a399364
+		summarizeBy: none
+		sourceColumn: MONTH_NAME
+		description: "Full month name (e.g., January, February). Use for display labels."
+
+		annotation SummarizationSetBy = Automatic
+
+	column WEEK_OF_YEAR
+		dataType: double
+		lineageTag: 11cfebce-7716-45e0-ac16-4a625fb594c1
+		summarizeBy: sum
+		sourceColumn: WEEK_OF_YEAR
+		description: "ISO week number (1-52/53). Use for weekly aggregations."
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column DAY_OF_MONTH
+		dataType: double
+		lineageTag: e7ecc57a-f17e-463b-8aea-2d905cb20d95
+		summarizeBy: sum
+		sourceColumn: DAY_OF_MONTH
+		description: "Day of month (1-31)."
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column DAY_OF_WEEK
+		dataType: double
+		lineageTag: 66e4afea-ac77-4dc8-bc6e-c5dc2c45a310
+		summarizeBy: sum
+		sourceColumn: DAY_OF_WEEK
+		description: "Day of week number (0=Sunday, 6=Saturday)."
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column DAY_NAME
+		dataType: string
+		lineageTag: 58dd9f2d-31a3-47a8-8ef5-5767e82eb16a
+		summarizeBy: none
+		sourceColumn: DAY_NAME
+		description: "Full day name (e.g., Monday, Tuesday). Use for day-of-week analysis."
+
+		annotation SummarizationSetBy = Automatic
+
+	column IS_WEEKDAY
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 3ffad92e-bb07-4d57-806e-e9f363cd1dfe
+		summarizeBy: none
+		sourceColumn: IS_WEEKDAY
+		description: "TRUE if Monday-Friday, FALSE if Saturday-Sunday."
+
+		annotation SummarizationSetBy = Automatic
+
+	column IS_TRADING_DAY
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: a9779dba-7e2f-44f6-9d7c-1ceca29b9027
+		summarizeBy: none
+		sourceColumn: IS_TRADING_DAY
+		description: "TRUE if US stock market is open (weekday, non-holiday). Use to filter for actual trading days."
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_date = m
+		mode: import
+		source =
+				let
+				    Source = Snowflake.Databases("JDGAEPV-LHA81787.snowflakecomputing.com","STOCK_ANALYTICS_WH",[Implementation="1.0"]),
+				    STOCK_ANALYTICS_DB_Database = Source{[Name="STOCK_ANALYTICS_DB",Kind="Database"]}[Data],
+				    MARTS_Schema = STOCK_ANALYTICS_DB_Database{[Name="MARTS",Kind="Schema"]}[Data],
+				    DIM_COMPANIES_Table = MARTS_Schema{[Name="DIM_DATE",Kind="Table"]}[Data]
+				in
+				    DIM_COMPANIES_Table
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

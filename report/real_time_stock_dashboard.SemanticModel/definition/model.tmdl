@@ -8,13 +8,15 @@ model Model
 
 annotation __PBI_TimeIntelligenceEnabled = 0
 
-annotation PBI_QueryOrder = ["DIM_COMPANIES","FCT_STOCK_OHLCV_HOURLY","FCT_STOCK_TRADES"]
+annotation PBI_QueryOrder = ["dim_companies","fct_stock_ohlcv_hourly","fct_stock_trades","dim_date","Metrics"]
 
 annotation PBI_ProTooling = ["DevMode"]
 
-ref table DIM_COMPANIES
-ref table FCT_STOCK_OHLCV_HOURLY
-ref table FCT_STOCK_TRADES
+ref table dim_companies
+ref table fct_stock_ohlcv_hourly
+ref table fct_stock_trades
+ref table dim_date
+ref table Metrics
 
 ref cultureInfo en-US
 

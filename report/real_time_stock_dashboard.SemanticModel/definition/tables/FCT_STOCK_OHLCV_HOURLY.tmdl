@@ -1,44 +1,13 @@
-table FCT_STOCK_OHLCV_HOURLY
+table fct_stock_ohlcv_hourly
 	lineageTag: 0e3171df-aa5a-49a2-8983-c2109231007c
+	description: "Hourly OHLCV fact table aggregating trade data into candlestick format. Grain: one row per (symbol, hour). Includes volatility metrics (VWAP, StdDev, Price Range). Primary table for Q1-Q5 analytics."
 
 	column SYMBOL
 		dataType: string
 		lineageTag: 13c7c7e0-cd74-4c16-b52a-cdc70a5b8c83
 		summarizeBy: none
 		sourceColumn: SYMBOL
-
-		annotation SummarizationSetBy = Automatic
-
-	column COMPANY_NAME
-		dataType: string
-		lineageTag: 50f2b3a7-5307-403e-93cb-e7e55a2b1ab7
-		summarizeBy: none
-		sourceColumn: COMPANY_NAME
-
-		annotation SummarizationSetBy = Automatic
-
-	column SECTOR
-		dataType: string
-		lineageTag: 906b4213-9c2b-4061-bd01-5fe6894185c1
-		summarizeBy: none
-		sourceColumn: SECTOR
-
-		annotation SummarizationSetBy = Automatic
-
-	column EXCHANGE
-		dataType: string
-		lineageTag: f9657df1-a5a4-40b2-89d2-13afb3d147a1
-		summarizeBy: none
-		sourceColumn: EXCHANGE
-
-		annotation SummarizationSetBy = Automatic
-
-	column HOUR_BUCKET
-		dataType: dateTime
-		formatString: General Date
-		lineageTag: c48d56b0-682e-4dc3-9a28-4d3f62c0af12
-		summarizeBy: none
-		sourceColumn: HOUR_BUCKET
+		description: "Stock ticker symbol. Foreign key to dim_companies."
 
 		annotation SummarizationSetBy = Automatic
 
@@ -47,6 +16,7 @@ table FCT_STOCK_OHLCV_HOURLY
 		lineageTag: 02103a5c-3136-4b55-8fa3-7a61d89c03c8
 		summarizeBy: sum
 		sourceColumn: OPEN_PRICE
+		description: "First trade price within the hour. Used for candlestick open."
 
 		annotation SummarizationSetBy = Automatic
 
@@ -57,6 +27,7 @@ table FCT_STOCK_OHLCV_HOURLY
 		lineageTag: 1809f490-f9f2-454a-944a-fbe3af2c7b14
 		summarizeBy: sum
 		sourceColumn: HIGH_PRICE
+		description: "Maximum trade price within the hour. Upper wick of candlestick."
 
 		annotation SummarizationSetBy = Automatic
 
@@ -67,6 +38,7 @@ table FCT_STOCK_OHLCV_HOURLY
 		lineageTag: be95c611-aee3-4b6b-8e4f-59c7f8f68d81
 		summarizeBy: sum
 		sourceColumn: LOW_PRICE
+		description: "Minimum trade price within the hour. Lower wick of candlestick."
 
 		annotation SummarizationSetBy = Automatic
 
@@ -77,6 +49,7 @@ table FCT_STOCK_OHLCV_HOURLY
 		lineageTag: f1bda740-ddb3-4f3c-92df-1a9e9c1bf2ed
 		summarizeBy: sum
 		sourceColumn: CLOSE_PRICE
+		description: "Last trade price within the hour. Used for candlestick close and VWAP comparison."
 
 		annotation SummarizationSetBy = Automatic
 
@@ -87,6 +60,7 @@ table FCT_STOCK_OHLCV_HOURLY
 		lineageTag: ca6dfb52-9f6f-4b95-9277-cce21ea5b5f4
 		summarizeBy: sum
 		sourceColumn: TOTAL_VOLUME
+		description: "Total shares traded within the hour. Key metric for volume spike analysis (Q4)."
 
 		annotation SummarizationSetBy = Automatic
 
@@ -97,6 +71,7 @@ table FCT_STOCK_OHLCV_HOURLY
 		lineageTag: 3ed49e2a-038c-4734-b37e-028780431693
 		summarizeBy: sum
 		sourceColumn: TRADE_COUNT
+		description: "Number of individual trades within the hour. Indicates market participation level."
 
 		annotation SummarizationSetBy = Automatic
 
@@ -107,6 +82,7 @@ table FCT_STOCK_OHLCV_HOURLY
 		lineageTag: b321f0a2-c155-443c-97ea-c40d18134453
 		summarizeBy: sum
 		sourceColumn: VWAP
+		description: "Volume-Weighted Average Price. Institutional benchmark for execution quality (Q2)."
 
 		annotation SummarizationSetBy = Automatic
 
@@ -117,6 +93,7 @@ table FCT_STOCK_OHLCV_HOURLY
 		lineageTag: 0d560c83-b8e7-4193-8f83-9d7843bea5d2
 		summarizeBy: sum
 		sourceColumn: STDDEV_PRICE
+		description: "Standard deviation of trade prices within the hour. Primary volatility metric (Q1)."
 
 		annotation SummarizationSetBy = Automatic
 
@@ -127,6 +104,7 @@ table FCT_STOCK_OHLCV_HOURLY
 		lineageTag: 3a665413-425d-47af-9a58-8650019c5de3
 		summarizeBy: sum
 		sourceColumn: PRICE_RANGE
+		description: "High minus Low price (intraday range). Alternative volatility measure (Q1)."
 
 		annotation SummarizationSetBy = Automatic
 
@@ -138,19 +116,57 @@ table FCT_STOCK_OHLCV_HOURLY
 		lineageTag: a29bd5ef-18be-4997-8ecf-b4ed8153a0a2
 		summarizeBy: average
 		sourceColumn: PCT_CHANGE
+		description: "Percentage price change (close vs open). Key metric for momentum analysis (Q3) and correlation (Q5)."
 
 		annotation SummarizationSetBy = User
 
-	partition FCT_STOCK_OHLCV_HOURLY = m
+	column TRADED_DATE
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: d7006fea-e1b3-48df-987e-b7d53ff9d995
+		summarizeBy: none
+		sourceColumn: TRADED_DATE
+		description: "Calendar date of trading (US/Eastern timezone). Extracted from hour_bucket."
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TRADED_HOUR
+		dataType: dateTime
+		formatString: Short Time
+		lineageTag: c52fd6d5-7621-4c29-a9b6-aff96a3e928d
+		summarizeBy: none
+		sourceColumn: TRADED_HOUR
+		description: "Hour of day (9 AM - 4 PM ET market hours). Use for intraday heatmaps."
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Time
+
+	column DATE_KEY
+		dataType: double
+		lineageTag: a67c361b-f0e4-406a-874a-0da1df3c990e
+		summarizeBy: none
+		sourceColumn: DATE_KEY
+		description: "Integer date key (YYYYMMDD format). Foreign key to dim_date."
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition fct_stock_ohlcv_hourly = m
 		mode: import
 		source =
 				let
 				    Source = Snowflake.Databases("JDGAEPV-LHA81787.snowflakecomputing.com","STOCK_ANALYTICS_WH",[Implementation="1.0"]),
 				    STOCK_ANALYTICS_DB_Database = Source{[Name="STOCK_ANALYTICS_DB",Kind="Database"]}[Data],
 				    MARTS_Schema = STOCK_ANALYTICS_DB_Database{[Name="MARTS",Kind="Schema"]}[Data],
-				    FCT_STOCK_OHLCV_HOURLY_Table = MARTS_Schema{[Name="FCT_STOCK_OHLCV_HOURLY",Kind="Table"]}[Data]
+				    FCT_STOCK_OHLCV_HOURLY_Table = MARTS_Schema{[Name="FCT_STOCK_OHLCV_HOURLY",Kind="Table"]}[Data],
+				    #"Removed Other Columns" = Table.SelectColumns(FCT_STOCK_OHLCV_HOURLY_Table,{"SYMBOL", "TRADED_DATE", "TRADED_HOUR", "OPEN_PRICE", "HIGH_PRICE", "LOW_PRICE", "CLOSE_PRICE", "TOTAL_VOLUME", "TRADE_COUNT", "VWAP", "STDDEV_PRICE", "PRICE_RANGE", "PCT_CHANGE", "DATE_KEY"})
 				in
-				    FCT_STOCK_OHLCV_HOURLY_Table
+				    #"Removed Other Columns"
 
 	annotation PBI_ResultType = Table
 
+	annotation PBI_NavigationStepName = Navigation

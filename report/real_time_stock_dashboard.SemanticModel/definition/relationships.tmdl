@@ -1,8 +1,16 @@
-relationship 0b55bd86-ce5f-d095-05dc-add296a909e5
-	fromColumn: FCT_STOCK_OHLCV_HOURLY.COMPANY_NAME
-	toColumn: DIM_COMPANIES.COMPANY_NAME
+relationship AutoDetected_ad658e29-4159-4992-b74f-45f4007304ca
+	fromColumn: fct_stock_ohlcv_hourly.DATE_KEY
+	toColumn: dim_date.DATE_KEY
 
-relationship aff84c5d-6255-edb5-3adc-42f787b9fa77
-	fromColumn: FCT_STOCK_TRADES.COMPANY_NAME
-	toColumn: DIM_COMPANIES.COMPANY_NAME
+relationship AutoDetected_989d1a09-45f8-414b-b7c7-73eb90a8338b
+	fromColumn: fct_stock_trades.DATE_KEY
+	toColumn: dim_date.DATE_KEY
+
+relationship 002507eb-f3ab-4b4a-f75d-5059dc7aefc2
+	fromColumn: fct_stock_ohlcv_hourly.SYMBOL
+	toColumn: dim_companies.SYMBOL
+
+relationship e442524b-bd36-1409-9617-2c06c6a50f5c
+	fromColumn: fct_stock_trades.SYMBOL
+	toColumn: dim_companies.SYMBOL
 

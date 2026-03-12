@@ -1,11 +1,13 @@
-table DIM_COMPANIES
+table dim_companies
 	lineageTag: 4e403a14-af18-4005-8329-7699c84369dd
+	description: "Company dimension table containing stock metadata. Links to fact tables via SYMBOL. Source: dbt seed file (stock_symbols.csv) loaded via dim_companies model."
 
 	column SYMBOL
 		dataType: string
 		lineageTag: 374f024b-3b65-4d67-969d-82a9d297aa79
 		summarizeBy: none
 		sourceColumn: SYMBOL
+		description: "Stock ticker symbol (e.g., AAPL, MSFT). Primary key for joining to fact tables."
 
 		annotation SummarizationSetBy = Automatic
 
@@ -14,22 +16,7 @@ table DIM_COMPANIES
 		lineageTag: 514a7314-da54-446f-8633-22f88e12d925
 		summarizeBy: none
 		sourceColumn: COMPANY_NAME
-
-		annotation SummarizationSetBy = Automatic
-
-	column SECTOR
-		dataType: string
-		lineageTag: 3a9026de-2520-469e-b80f-e85e6df1f5e1
-		summarizeBy: none
-		sourceColumn: SECTOR
-
-		annotation SummarizationSetBy = Automatic
-
-	column INDUSTRY
-		dataType: string
-		lineageTag: b53d1343-f49b-4cb1-b4c3-c38fba0f2063
-		summarizeBy: none
-		sourceColumn: INDUSTRY
+		description: "Full legal company name (e.g., Apple Inc., Microsoft Corporation)."
 
 		annotation SummarizationSetBy = Automatic
 
@@ -38,6 +25,7 @@ table DIM_COMPANIES
 		lineageTag: 7c2a0cd7-c075-4ca1-988f-935fb866dd55
 		summarizeBy: none
 		sourceColumn: EXCHANGE
+		description: "Stock exchange where the security trades (NASDAQ or NYSE)."
 
 		annotation SummarizationSetBy = Automatic
 
@@ -47,28 +35,23 @@ table DIM_COMPANIES
 		dataCategory: ImageUrl
 		summarizeBy: none
 		sourceColumn: LOGO_URL
+		description: "URL to company logo image. Used for visual display in reports."
 
 		annotation SummarizationSetBy = Automatic
 
-	column UPDATED_AT
-		dataType: dateTime
-		formatString: General Date
-		lineageTag: fc9d506a-7b7f-419f-9a87-b3703ab566f2
-		summarizeBy: none
-		sourceColumn: UPDATED_AT
-
-		annotation SummarizationSetBy = Automatic
-
-	partition DIM_COMPANIES = m
+	partition dim_companies = m
 		mode: import
 		source =
 				let
 				    Source = Snowflake.Databases("JDGAEPV-LHA81787.snowflakecomputing.com","STOCK_ANALYTICS_WH",[Implementation="1.0"]),
 				    STOCK_ANALYTICS_DB_Database = Source{[Name="STOCK_ANALYTICS_DB",Kind="Database"]}[Data],
 				    MARTS_Schema = STOCK_ANALYTICS_DB_Database{[Name="MARTS",Kind="Schema"]}[Data],
-				    DIM_COMPANIES_Table = MARTS_Schema{[Name="DIM_COMPANIES",Kind="Table"]}[Data]
+				    DIM_COMPANIES_Table = MARTS_Schema{[Name="DIM_COMPANIES",Kind="Table"]}[Data],
+				    #"Removed Other Columns" = Table.SelectColumns(DIM_COMPANIES_Table,{"SYMBOL", "COMPANY_NAME", "EXCHANGE", "LOGO_URL"})
 				in
-				    DIM_COMPANIES_Table
+				    #"Removed Other Columns"
 
 	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
 
