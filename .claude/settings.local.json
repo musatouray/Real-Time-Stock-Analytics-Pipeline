@@ -4,7 +4,8 @@
       "Bash(git restore:*)",
       "Bash(git checkout:*)",
       "Bash(docker compose exec dbt dbt seed:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "WebSearch"
     ]
   }
 }

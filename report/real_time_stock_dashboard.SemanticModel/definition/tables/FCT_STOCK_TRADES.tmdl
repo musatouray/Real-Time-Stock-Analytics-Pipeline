@@ -1,89 +1,89 @@
+/// Trade-level fact table containing individual stock transactions. Grain: one row per trade.
 table fct_stock_trades
 	lineageTag: 8cc35b09-aa96-4155-9f04-0ba1e408c07b
-	description: "Trade-level fact table containing individual stock transactions. Grain: one row per trade. Source: Finnhub WebSocket via Kafka/S3/Snowpipe pipeline. Use for tick-level analysis and drill-through from hourly aggregates."
 
+	/// Stock ticker symbol. Foreign key to dim_companies.
 	column SYMBOL
 		dataType: string
 		lineageTag: 04822078-6992-4f79-bd72-9658ef35aed9
 		summarizeBy: none
 		sourceColumn: SYMBOL
-		description: "Stock ticker symbol. Foreign key to dim_companies."
 
 		annotation SummarizationSetBy = Automatic
 
+	/// Trade execution price in USD.
 	column PRICE
 		dataType: double
 		lineageTag: 17af1e37-5bb2-4237-8c75-9e19e33d68df
 		summarizeBy: sum
 		sourceColumn: PRICE
-		description: "Trade execution price in USD."
 
 		annotation SummarizationSetBy = Automatic
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
+	/// Number of shares in this trade.
 	column VOLUME
 		dataType: double
 		lineageTag: 8b8a49ac-bc37-4709-9b8f-0c4bc97b4774
 		summarizeBy: sum
 		sourceColumn: VOLUME
-		description: "Number of shares in this trade."
 
 		annotation SummarizationSetBy = Automatic
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
+	/// Dollar value of trade (price x volume).
 	column TRADE_VALUE_USD
 		dataType: double
 		lineageTag: b991007a-df5c-4e19-82a7-27f0d6291f39
 		summarizeBy: sum
 		sourceColumn: TRADE_VALUE_USD
-		description: "Dollar value of trade (price x volume). Used for total trade value calculations."
 
 		annotation SummarizationSetBy = Automatic
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
+	/// Exact timestamp of trade execution (US/Eastern timezone).
 	column TRADED_AT
 		dataType: dateTime
 		formatString: General Date
 		lineageTag: 30fb485c-6b84-46d8-a020-ea2f5981ee14
 		summarizeBy: none
 		sourceColumn: TRADED_AT
-		description: "Exact timestamp of trade execution (US/Eastern timezone)."
 
 		annotation SummarizationSetBy = Automatic
 
+	/// Hour component of trade time. Use for grouping trades by market hour.
 	column TRADED_HOUR
 		dataType: dateTime
 		formatString: Long Time
 		lineageTag: a29652fc-75a5-43ec-a347-a82a8e886185
 		summarizeBy: none
 		sourceColumn: TRADED_HOUR
-		description: "Hour component of trade time. Use for grouping trades by market hour."
 
 		annotation SummarizationSetBy = Automatic
 
 		annotation UnderlyingDateTimeDataType = Time
 
+	/// Calendar date of trade (US/Eastern timezone).
 	column TRADED_DATE
 		dataType: dateTime
 		formatString: Long Date
 		lineageTag: c7a5eec1-2be8-451d-9da1-dfeb84568351
 		summarizeBy: none
 		sourceColumn: TRADED_DATE
-		description: "Calendar date of trade (US/Eastern timezone)."
 
 		annotation SummarizationSetBy = Automatic
 
 		annotation UnderlyingDateTimeDataType = Date
 
+	/// Integer date key (YYYYMMDD format). Foreign key to dim_date.
 	column DATE_KEY
 		dataType: double
 		lineageTag: e7146304-f0e9-4d34-85e0-c7eefe79329c
 		summarizeBy: none
 		sourceColumn: DATE_KEY
-		description: "Integer date key (YYYYMMDD format). Foreign key to dim_date."
 
 		annotation SummarizationSetBy = Automatic
 

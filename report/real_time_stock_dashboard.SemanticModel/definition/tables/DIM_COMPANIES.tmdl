@@ -1,41 +1,41 @@
+/// Company dimension table containing stock metadata. Links to fact tables via SYMBOL.
 table dim_companies
 	lineageTag: 4e403a14-af18-4005-8329-7699c84369dd
-	description: "Company dimension table containing stock metadata. Links to fact tables via SYMBOL. Source: dbt seed file (stock_symbols.csv) loaded via dim_companies model."
 
+	/// Stock ticker symbol (e.g., AAPL, MSFT). Primary key for joining to fact tables.
 	column SYMBOL
 		dataType: string
 		lineageTag: 374f024b-3b65-4d67-969d-82a9d297aa79
 		summarizeBy: none
 		sourceColumn: SYMBOL
-		description: "Stock ticker symbol (e.g., AAPL, MSFT). Primary key for joining to fact tables."
 
 		annotation SummarizationSetBy = Automatic
 
+	/// Full legal company name (e.g., Apple Inc., Microsoft Corporation).
 	column COMPANY_NAME
 		dataType: string
 		lineageTag: 514a7314-da54-446f-8633-22f88e12d925
 		summarizeBy: none
 		sourceColumn: COMPANY_NAME
-		description: "Full legal company name (e.g., Apple Inc., Microsoft Corporation)."
 
 		annotation SummarizationSetBy = Automatic
 
+	/// Stock exchange where the security trades (NASDAQ or NYSE).
 	column EXCHANGE
 		dataType: string
 		lineageTag: 7c2a0cd7-c075-4ca1-988f-935fb866dd55
 		summarizeBy: none
 		sourceColumn: EXCHANGE
-		description: "Stock exchange where the security trades (NASDAQ or NYSE)."
 
 		annotation SummarizationSetBy = Automatic
 
+	/// URL to company logo image. Used for visual display in reports.
 	column LOGO_URL
 		dataType: string
 		lineageTag: 385768ff-1263-43d4-8c1c-3b736c629ada
 		dataCategory: ImageUrl
 		summarizeBy: none
 		sourceColumn: LOGO_URL
-		description: "URL to company logo image. Used for visual display in reports."
 
 		annotation SummarizationSetBy = Automatic
 
@@ -54,4 +54,3 @@ table dim_companies
 	annotation PBI_ResultType = Table
 
 	annotation PBI_NavigationStepName = Navigation
-
