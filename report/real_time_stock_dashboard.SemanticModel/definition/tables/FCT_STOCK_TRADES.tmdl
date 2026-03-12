@@ -104,3 +104,4 @@ table fct_stock_trades
 	annotation PBI_ResultType = Table
 
 	annotation PBI_NavigationStepName = Navigation
+

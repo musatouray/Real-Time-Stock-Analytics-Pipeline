@@ -4,270 +4,275 @@ table Metrics
 
 	/// Counts all trade records in the filtered context.
 	measure 'Total Trades' = COUNTROWS(fct_stock_trades)
-		displayFolder: "Base Calculations"
 		formatString: #,##0
+		displayFolder: Base Calculations
 		lineageTag: m001-base-total-trades
 
 	/// Sums the share volume across all trades in the filtered context.
 	measure 'Total Volume' = SUM(fct_stock_trades[VOLUME])
-		displayFolder: "Base Calculations"
 		formatString: #,##0
+		displayFolder: Base Calculations
 		lineageTag: m002-base-total-volume
 
 	/// Sums the USD value (price x volume) of all trades in the filtered context.
 	measure 'Total Trade Value' = SUM(fct_stock_trades[TRADE_VALUE_USD])
-		displayFolder: "Base Calculations"
 		formatString: $#,##0
+		displayFolder: Base Calculations
 		lineageTag: m003-base-total-trade-value
 
 	/// Calculates the simple average trade price in the filtered context.
 	measure 'Average Price' = AVERAGE(fct_stock_trades[PRICE])
-		displayFolder: "Base Calculations"
 		formatString: $#,##0.00
+		displayFolder: Base Calculations
 		lineageTag: m004-base-avg-price
 
 	/// Counts the number of unique stock symbols in the filtered context.
 	measure 'Distinct Stocks' = DISTINCTCOUNT(fct_stock_trades[SYMBOL])
-		displayFolder: "Base Calculations"
 		formatString: #,##0
+		displayFolder: Base Calculations
 		lineageTag: m005-base-distinct-stocks
 
 	/// Counts the number of unique trading days in the filtered context.
 	measure 'Trading Days' = DISTINCTCOUNT(fct_stock_trades[TRADED_DATE])
-		displayFolder: "Base Calculations"
 		formatString: #,##0
+		displayFolder: Base Calculations
 		lineageTag: m006-base-trading-days
 
 	/// Counts the number of hourly OHLCV records in the filtered context.
 	measure 'Hourly Periods' = COUNTROWS(fct_stock_ohlcv_hourly)
-		displayFolder: "Base Calculations"
 		formatString: #,##0
+		displayFolder: Base Calculations
 		lineageTag: m007-base-hourly-periods
 
 	/// Averages the hourly price standard deviation. Higher values indicate greater price dispersion.
 	measure 'Avg Volatility (StdDev)' = AVERAGE(fct_stock_ohlcv_hourly[STDDEV_PRICE])
-		displayFolder: "Q1 - Volatility"
 		formatString: 0.0000
+		displayFolder: Q1 - Volatility
 		lineageTag: m101-vol-avg-stddev
 
 	/// Returns the maximum hourly standard deviation. Identifies peak volatility periods.
 	measure 'Max Volatility (StdDev)' = MAX(fct_stock_ohlcv_hourly[STDDEV_PRICE])
-		displayFolder: "Q1 - Volatility"
 		formatString: 0.0000
+		displayFolder: Q1 - Volatility
 		lineageTag: m102-vol-max-stddev
 
 	/// Averages the hourly high-low price range. Measures intraday price swing magnitude.
 	measure 'Avg Price Range' = AVERAGE(fct_stock_ohlcv_hourly[PRICE_RANGE])
-		displayFolder: "Q1 - Volatility"
 		formatString: $#,##0.00
+		displayFolder: Q1 - Volatility
 		lineageTag: m103-vol-avg-range
 
 	/// Returns the maximum hourly high-low range. Identifies the widest price swings.
 	measure 'Max Price Range' = MAX(fct_stock_ohlcv_hourly[PRICE_RANGE])
-		displayFolder: "Q1 - Volatility"
 		formatString: $#,##0.00
+		displayFolder: Q1 - Volatility
 		lineageTag: m104-vol-max-range
 
 	/// Calculates price range as a percentage of the open price. Normalizes volatility for comparison.
 	measure 'Price Range %' = DIVIDE(AVERAGE(fct_stock_ohlcv_hourly[PRICE_RANGE]), AVERAGE(fct_stock_ohlcv_hourly[OPEN_PRICE]), 0)
-		displayFolder: "Q1 - Volatility"
 		formatString: 0.00%
+		displayFolder: Q1 - Volatility
 		lineageTag: m106-vol-range-pct
 
 	/// Averages the Volume-Weighted Average Price. Institutional fair value benchmark.
 	measure 'Avg VWAP' = AVERAGE(fct_stock_ohlcv_hourly[VWAP])
-		displayFolder: "Q2 - VWAP Analysis"
 		formatString: $#,##0.00
+		displayFolder: Q2 - VWAP Analysis
 		lineageTag: m201-vwap-avg
 
 	/// Averages the hourly closing prices in the filtered context.
 	measure 'Avg Close Price' = AVERAGE(fct_stock_ohlcv_hourly[CLOSE_PRICE])
-		displayFolder: "Q2 - VWAP Analysis"
 		formatString: $#,##0.00
+		displayFolder: Q2 - VWAP Analysis
 		lineageTag: m202-vwap-avg-close
 
 	/// Dollar difference between average close and VWAP. Positive = above fair value.
 	measure 'VWAP Divergence $' = [Avg Close Price] - [Avg VWAP]
-		displayFolder: "Q2 - VWAP Analysis"
 		formatString: $#,##0.00
+		displayFolder: Q2 - VWAP Analysis
 		lineageTag: m203-vwap-div-dollar
 
 	/// Percentage divergence from VWAP. Values > 0.5% or < -0.5% indicate significant deviation.
 	measure 'VWAP Divergence %' = DIVIDE([Avg Close Price] - [Avg VWAP], [Avg VWAP], 0)
-		displayFolder: "Q2 - VWAP Analysis"
 		formatString: 0.00%
+		displayFolder: Q2 - VWAP Analysis
 		lineageTag: m204-vwap-div-pct
 
 	/// Categorizes VWAP position: Above (buying pressure), Below (distribution), or Neutral.
-	measure 'VWAP Signal' =
+	measure 'VWAP Signal' = ```
 		VAR Divergence = [VWAP Divergence %]
 		RETURN SWITCH(TRUE(), Divergence > 0.005, "Above VWAP (Buying Pressure)", Divergence < -0.005, "Below VWAP (Distribution)", "Near VWAP (Neutral)")
-		displayFolder: "Q2 - VWAP Analysis"
-		lineageTag: m205-vwap-signal
+		```
+		displayFolder: Q2 - VWAP Analysis
+		lineageTag: 21d7743c-ac0e-4a2e-87f0-b58c3008183e
 
 	/// Counts hourly periods where close price exceeded VWAP. Indicates buying pressure.
 	measure 'Hours Above VWAP' = CALCULATE(COUNTROWS(fct_stock_ohlcv_hourly), fct_stock_ohlcv_hourly[CLOSE_PRICE] > fct_stock_ohlcv_hourly[VWAP])
-		displayFolder: "Q2 - VWAP Analysis"
 		formatString: #,##0
+		displayFolder: Q2 - VWAP Analysis
 		lineageTag: m206-vwap-hours-above
 
 	/// Counts hourly periods where close price was below VWAP. Indicates selling pressure.
 	measure 'Hours Below VWAP' = CALCULATE(COUNTROWS(fct_stock_ohlcv_hourly), fct_stock_ohlcv_hourly[CLOSE_PRICE] < fct_stock_ohlcv_hourly[VWAP])
-		displayFolder: "Q2 - VWAP Analysis"
 		formatString: #,##0
+		displayFolder: Q2 - VWAP Analysis
 		lineageTag: m207-vwap-hours-below
 
 	/// Percentage of hours trading above VWAP. Higher values suggest buying interest.
 	measure 'VWAP Win Rate' = DIVIDE([Hours Above VWAP], [Hourly Periods], 0)
-		displayFolder: "Q2 - VWAP Analysis"
 		formatString: 0.0%
+		displayFolder: Q2 - VWAP Analysis
 		lineageTag: m208-vwap-win-rate
 
 	/// Averages the hourly percentage price change. Positive = upward momentum.
 	measure 'Avg Price Change %' = AVERAGE(fct_stock_ohlcv_hourly[PCT_CHANGE])
-		displayFolder: "Q3 - Momentum"
 		formatString: 0.00%
+		displayFolder: Q3 - Momentum
 		lineageTag: m301-mom-avg-pct-change
 
 	/// Average price change during 9 AM hour (market open). Captures first-hour momentum.
 	measure 'Market Open Momentum' = CALCULATE(AVERAGE(fct_stock_ohlcv_hourly[PCT_CHANGE]), HOUR(fct_stock_ohlcv_hourly[TRADED_HOUR]) = 9)
-		displayFolder: "Q3 - Momentum"
 		formatString: 0.00%
+		displayFolder: Q3 - Momentum
 		lineageTag: m302-mom-market-open
 
 	/// Counts hours with positive price change. Indicates bullish momentum persistence.
 	measure 'Positive Momentum Hours' = CALCULATE(COUNTROWS(fct_stock_ohlcv_hourly), fct_stock_ohlcv_hourly[PCT_CHANGE] > 0)
-		displayFolder: "Q3 - Momentum"
 		formatString: #,##0
+		displayFolder: Q3 - Momentum
 		lineageTag: m303-mom-positive-hours
 
 	/// Counts hours with negative price change. Indicates bearish pressure persistence.
 	measure 'Negative Momentum Hours' = CALCULATE(COUNTROWS(fct_stock_ohlcv_hourly), fct_stock_ohlcv_hourly[PCT_CHANGE] < 0)
-		displayFolder: "Q3 - Momentum"
 		formatString: #,##0
+		displayFolder: Q3 - Momentum
 		lineageTag: m304-mom-negative-hours
 
 	/// Percentage of hours with positive price change. Higher values indicate upward momentum.
 	measure 'Momentum Win Rate' = DIVIDE([Positive Momentum Hours], [Hourly Periods], 0)
-		displayFolder: "Q3 - Momentum"
 		formatString: 0.0%
+		displayFolder: Q3 - Momentum
 		lineageTag: m305-mom-win-rate
 
 	/// Returns the largest single-hour percentage gain. Identifies peak bullish moves.
 	measure 'Max Hourly Gain' = MAX(fct_stock_ohlcv_hourly[PCT_CHANGE])
-		displayFolder: "Q3 - Momentum"
 		formatString: 0.00%
+		displayFolder: Q3 - Momentum
 		lineageTag: m306-mom-max-gain
 
 	/// Returns the largest single-hour percentage loss. Identifies peak bearish moves.
 	measure 'Max Hourly Loss' = MIN(fct_stock_ohlcv_hourly[PCT_CHANGE])
-		displayFolder: "Q3 - Momentum"
 		formatString: 0.00%
+		displayFolder: Q3 - Momentum
 		lineageTag: m307-mom-max-loss
 
 	/// Averages hourly trading volume. Baseline for identifying volume spikes.
 	measure 'Avg Hourly Volume' = AVERAGE(fct_stock_ohlcv_hourly[TOTAL_VOLUME])
-		displayFolder: "Q4 - Volume Analysis"
 		formatString: #,##0
+		displayFolder: Q4 - Volume Analysis
 		lineageTag: m401-vol-avg-hourly
 
 	/// Returns the maximum hourly volume. Identifies peak trading activity.
 	measure 'Max Hourly Volume' = MAX(fct_stock_ohlcv_hourly[TOTAL_VOLUME])
-		displayFolder: "Q4 - Volume Analysis"
 		formatString: #,##0
+		displayFolder: Q4 - Volume Analysis
 		lineageTag: m402-vol-max-hourly
 
 	/// Sums total volume across all hourly periods in the filtered context.
 	measure 'Total Hourly Volume' = SUM(fct_stock_ohlcv_hourly[TOTAL_VOLUME])
-		displayFolder: "Q4 - Volume Analysis"
 		formatString: #,##0
+		displayFolder: Q4 - Volume Analysis
 		lineageTag: m403-vol-total-hourly
 
 	/// Averages the number of trades per hour. Higher counts indicate active participation.
 	measure 'Avg Trade Count' = AVERAGE(fct_stock_ohlcv_hourly[TRADE_COUNT])
-		displayFolder: "Q4 - Volume Analysis"
 		formatString: #,##0
+		displayFolder: Q4 - Volume Analysis
 		lineageTag: m404-vol-avg-trade-count
 
 	/// Ratio of current volume to average volume. Values > 1.5 indicate volume spikes.
-	measure 'Volume vs Avg Ratio' =
+	measure 'Volume vs Avg Ratio' = ```
 		VAR CurrentVolume = SUM(fct_stock_ohlcv_hourly[TOTAL_VOLUME])
 		VAR AvgVolume = CALCULATE(AVERAGE(fct_stock_ohlcv_hourly[TOTAL_VOLUME]), ALLSELECTED(fct_stock_ohlcv_hourly[TRADED_DATE]), ALLSELECTED(fct_stock_ohlcv_hourly[TRADED_HOUR]))
 		RETURN DIVIDE(CurrentVolume, AvgVolume, 0)
-		displayFolder: "Q4 - Volume Analysis"
+		```
 		formatString: 0.00
-		lineageTag: m405-vol-ratio
+		displayFolder: Q4 - Volume Analysis
+		lineageTag: c3516f0b-4937-4706-b0b2-f30eaae02789
 
 	/// Flags periods where volume exceeds 1.5x the average as Spike, otherwise Normal.
 	measure 'Volume Spike Flag' = IF([Volume vs Avg Ratio] > 1.5, "Spike", "Normal")
-		displayFolder: "Q4 - Volume Analysis"
+		displayFolder: Q4 - Volume Analysis
 		lineageTag: m406-vol-spike-flag
 
 	/// Average shares per trade. Higher values indicate institutional block trades.
 	measure 'Avg Volume per Trade' = DIVIDE(SUM(fct_stock_ohlcv_hourly[TOTAL_VOLUME]), SUM(fct_stock_ohlcv_hourly[TRADE_COUNT]), 0)
-		displayFolder: "Q4 - Volume Analysis"
 		formatString: #,##0
+		displayFolder: Q4 - Volume Analysis
 		lineageTag: m407-vol-per-trade
 
 	/// Calculates hourly return as (close - open) / open. Used for correlation analysis.
-	measure 'Hourly Return' =
+	measure 'Hourly Return' = ```
 		VAR CurrentClose = AVERAGE(fct_stock_ohlcv_hourly[CLOSE_PRICE])
 		VAR PriorClose = AVERAGE(fct_stock_ohlcv_hourly[OPEN_PRICE])
 		RETURN DIVIDE(CurrentClose - PriorClose, PriorClose, 0)
-		displayFolder: "Q5 - Correlation"
+		```
 		formatString: 0.00%
-		lineageTag: m501-corr-hourly-return
+		displayFolder: Q5 - Correlation
+		lineageTag: 13d6c624-6281-4bc3-bae9-36fb607421d4
 
 	/// Calculates variance of hourly returns. Higher variance indicates less predictable movements.
-	measure 'Return Variance' =
+	measure 'Return Variance' = ```
 		VAR AvgReturn = [Avg Price Change %]
 		RETURN AVERAGEX(fct_stock_ohlcv_hourly, POWER(fct_stock_ohlcv_hourly[PCT_CHANGE] - AvgReturn, 2))
-		displayFolder: "Q5 - Correlation"
+		```
 		formatString: 0.0000
+		displayFolder: Q5 - Correlation
 		lineageTag: m502-corr-variance
 
 	/// Standard deviation of hourly returns. Measures return dispersion.
 	measure 'Return Std Dev' = SQRT([Return Variance])
-		displayFolder: "Q5 - Correlation"
 		formatString: 0.00%
+		displayFolder: Q5 - Correlation
 		lineageTag: m503-corr-stddev
 
 	/// Risk-adjusted return ratio (return / volatility). Higher values indicate better risk-reward.
 	measure 'Sharpe-like Ratio' = DIVIDE([Avg Price Change %], [Return Std Dev], 0)
-		displayFolder: "Q5 - Correlation"
 		formatString: 0.00
+		displayFolder: Q5 - Correlation
 		lineageTag: m504-corr-sharpe
 
 	/// Averages hourly opening prices in the filtered context.
 	measure 'Avg Open Price' = AVERAGE(fct_stock_ohlcv_hourly[OPEN_PRICE])
-		displayFolder: "OHLCV Metrics"
 		formatString: $#,##0.00
+		displayFolder: OHLCV Metrics
 		lineageTag: m601-ohlcv-avg-open
 
 	/// Averages hourly high prices in the filtered context.
 	measure 'Avg High Price' = AVERAGE(fct_stock_ohlcv_hourly[HIGH_PRICE])
-		displayFolder: "OHLCV Metrics"
 		formatString: $#,##0.00
+		displayFolder: OHLCV Metrics
 		lineageTag: m602-ohlcv-avg-high
 
 	/// Averages hourly low prices in the filtered context.
 	measure 'Avg Low Price' = AVERAGE(fct_stock_ohlcv_hourly[LOW_PRICE])
-		displayFolder: "OHLCV Metrics"
 		formatString: $#,##0.00
+		displayFolder: OHLCV Metrics
 		lineageTag: m603-ohlcv-avg-low
 
 	/// Returns the most recent closing price. Useful for current price cards.
 	measure 'Latest Close Price' = CALCULATE(LASTNONBLANK(fct_stock_ohlcv_hourly[CLOSE_PRICE], 1), LASTNONBLANK(fct_stock_ohlcv_hourly[TRADED_DATE], 1))
-		displayFolder: "OHLCV Metrics"
 		formatString: $#,##0.00
+		displayFolder: OHLCV Metrics
 		lineageTag: m604-ohlcv-latest-close
 
 	partition Metrics = m
 		mode: import
 		source =
-			let
-				Table = #table(type table [], {})
-			in
-				Table
+				let
+					Table = #table(type table [], {})
+				in
+					Table
 
 	annotation PBI_ResultType = Table
+
