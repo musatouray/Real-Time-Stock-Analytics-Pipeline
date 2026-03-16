@@ -2,6 +2,7 @@
   int_stock_ohlcv
   ────────────────
   Aggregates raw trade ticks into standard OHLCV bars at hourly granularity.
+  Unions real-time data with historical backfill data from yfinance.
 
   FIRST/LAST use Snowflake window functions ordered by traded_at to derive
   the open (first trade price) and close (last trade price) within each bucket.
@@ -48,7 +49,7 @@ hourly as (
 ),
 
 -- Collapse back to one row per (symbol, hour_bucket)
-collapsed as (
+realtime_ohlcv as (
 
     select
         symbol,
@@ -58,11 +59,56 @@ collapsed as (
         min(low_price)          as low_price,
         any_value(close_price)  as close_price,
         sum(total_volume)       as total_volume,
-        sum(trade_count)        as trade_count
+        sum(trade_count)        as trade_count,
+        'realtime'              as data_source
 
     from hourly
     group by symbol, hour_bucket
 
+),
+
+-- Historical backfill data from yfinance (loaded via backfill script)
+-- Uses hourly granularity only; daily data excluded to maintain consistency
+historical_ohlcv as (
+
+    select
+        symbol,
+        hour_bucket,
+        open_price,
+        high_price,
+        low_price,
+        close_price,
+        total_volume,
+        trade_count,
+        'historical' as data_source
+    from {{ source('intermediate', 'stock_ohlcv_historical') }}
+    where granularity = 'hourly'
+
+),
+
+-- Union real-time and historical, preferring real-time for overlapping periods
+combined as (
+
+    select * from realtime_ohlcv
+
+    union all
+
+    select * from historical_ohlcv h
+    where not exists (
+        select 1 from realtime_ohlcv r
+        where r.symbol = h.symbol
+          and r.hour_bucket = h.hour_bucket
+    )
+
 )
 
-select * from collapsed
+select
+    symbol,
+    hour_bucket,
+    open_price,
+    high_price,
+    low_price,
+    close_price,
+    total_volume,
+    trade_count
+from combined

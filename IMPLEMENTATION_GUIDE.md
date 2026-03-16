@@ -80,6 +80,19 @@ The producer supports two modes:
 
 > **Recommendation:** Start with WebSocket mode to see real-time data flowing. Switch to polling mode after your demo to reduce costs.
 
+### Tracked Symbols (20 Total)
+
+The pipeline tracks these 20 major NASDAQ and NYSE stocks:
+
+```
+AAPL, MSFT, GOOGL, AMZN, NVDA, TSLA, META, JPM, V, JNJ
+UNH, XOM, WMT, MA, NFLX, AVGO, AMD, CRM, ORCL, DIS
+```
+
+To modify symbols, update both:
+- `kafka/producer/config.py` — real-time streaming
+- `dbt/seeds/stock_symbols.csv` — company metadata
+
 ---
 
 ## Step 3 — Create the S3 Bucket
@@ -217,7 +230,27 @@ make dbt-docs
 
 ---
 
-## Step 9 — Connect Power BI to Snowflake
+## Step 9 — Backfill Historical Data (Optional)
+
+For Yahoo Finance-style period filters (1D, 5D, 1M, 6M, YTD, 1Y, 5Y, All), backfill historical data from yfinance:
+
+```bash
+# Install dependencies
+cd scripts && uv sync && cd ..
+
+# Run backfill (fetches 5Y daily + 2Y hourly for all 20 symbols)
+uv run --directory scripts python backfill_historical.py
+
+# Rebuild dbt models with historical data
+docker compose exec dbt dbt run --full-refresh \
+  --project-dir /usr/app/dbt --profiles-dir /usr/app/dbt
+```
+
+The backfill loads data into `INTERMEDIATE.STOCK_OHLCV_HISTORICAL`, which is automatically unioned with real-time data in the `int_stock_ohlcv` model.
+
+---
+
+## Step 10 — Connect Power BI to Snowflake
 
 1. Open **Power BI Desktop**
 2. **Get Data** → **Snowflake**
@@ -228,6 +261,7 @@ make dbt-docs
    - `MARTS.FCT_STOCK_TRADES`
    - `MARTS.FCT_STOCK_OHLCV_HOURLY`
    - `MARTS.DIM_COMPANIES`
+   - `MARTS.DIM_DATE`
 7. Build your five dashboard pages (one per business question)
 8. Set **Direct Query** mode for near-real-time refresh
 
@@ -235,7 +269,7 @@ make dbt-docs
 
 ---
 
-## Step 10 — Monitoring & Maintenance
+## Step 11 — Monitoring & Maintenance
 
 ```bash
 # Check Snowpipe copy history (Snowflake)

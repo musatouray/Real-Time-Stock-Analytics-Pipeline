@@ -13,3 +13,30 @@ sources:
             description: "Raw VARIANT column containing the full JSON trade record"
        #   - name: RECORD_METADATA
        #     description: "Snowpipe ingestion metadata (filename, row number, etc.)"
+
+  - name: intermediate
+    database: STOCK_ANALYTICS_DB
+    schema: INTERMEDIATE
+    description: "Intermediate tables including historical backfill data"
+    tables:
+      - name: stock_ohlcv_historical
+        description: "Historical OHLCV data backfilled from Yahoo Finance via yfinance"
+        columns:
+          - name: SYMBOL
+            description: "Stock ticker symbol"
+          - name: HOUR_BUCKET
+            description: "Timestamp of the OHLCV bar"
+          - name: OPEN_PRICE
+            description: "Opening price"
+          - name: HIGH_PRICE
+            description: "Highest price"
+          - name: LOW_PRICE
+            description: "Lowest price"
+          - name: CLOSE_PRICE
+            description: "Closing price"
+          - name: TOTAL_VOLUME
+            description: "Total shares traded"
+          - name: TRADE_COUNT
+            description: "Number of trades (1 for historical data)"
+          - name: GRANULARITY
+            description: "Data granularity: 'hourly' or 'daily'"

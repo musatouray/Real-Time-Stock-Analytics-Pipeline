@@ -16,6 +16,8 @@ KAFKA_TOPIC_TRADES = os.getenv("KAFKA_TOPIC_TRADES", "stock.trades")
 
 # Symbols to subscribe to via Finnhub WebSocket or poll via REST API
 STOCK_SYMBOLS = [
-    "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA",
-    "META", "NVDA", "JPM", "V", "JNJ",
+    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA",
+    "TSLA", "META", "JPM", "V", "JNJ",
+    "UNH", "XOM", "WMT", "MA", "NFLX",
+    "AVGO", "AMD", "CRM", "ORCL", "DIS",
 ]

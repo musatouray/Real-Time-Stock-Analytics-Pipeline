@@ -13,7 +13,7 @@
 | **Owner** | Amigomusa |
 | **Goal** | Portfolio project demonstrating end-to-end data engineering skills |
 | **End visualization** | Power BI (connected directly to Snowflake) |
-| **Last updated** | 2026-03-12 (S3 + Snowflake timezone fixes, dim_date, fact table enhancements) |
+| **Last updated** | 2026-03-16 (Historical backfill, 20 symbols, prev_day_close metrics) |
 
 ---
 
@@ -149,6 +149,65 @@ The `finnhub-producer` service supports two modes, configurable via `.env`:
 
 ---
 
+## Stock Symbols (20 Total)
+
+| Symbol | Company | Sector | Exchange |
+|--------|---------|--------|----------|
+| AAPL | Apple Inc. | Technology | NASDAQ |
+| MSFT | Microsoft Corporation | Technology | NASDAQ |
+| GOOGL | Alphabet Inc. | Communication Services | NASDAQ |
+| AMZN | Amazon.com Inc. | Consumer Cyclical | NASDAQ |
+| NVDA | NVIDIA Corporation | Technology | NASDAQ |
+| TSLA | Tesla Inc. | Consumer Cyclical | NASDAQ |
+| META | Meta Platforms Inc. | Communication Services | NASDAQ |
+| JPM | JPMorgan Chase & Co. | Financial Services | NYSE |
+| V | Visa Inc. | Financial Services | NYSE |
+| JNJ | Johnson & Johnson | Healthcare | NYSE |
+| UNH | UnitedHealth Group Inc. | Healthcare | NYSE |
+| XOM | Exxon Mobil Corporation | Energy | NYSE |
+| WMT | Walmart Inc. | Consumer Defensive | NYSE |
+| MA | Mastercard Inc. | Financial Services | NYSE |
+| NFLX | Netflix Inc. | Communication Services | NASDAQ |
+| AVGO | Broadcom Inc. | Technology | NASDAQ |
+| AMD | Advanced Micro Devices Inc. | Technology | NASDAQ |
+| CRM | Salesforce Inc. | Technology | NYSE |
+| ORCL | Oracle Corporation | Technology | NYSE |
+| DIS | The Walt Disney Company | Communication Services | NYSE |
+
+Symbols are configured in:
+- `kafka/producer/config.py` — real-time streaming
+- `dbt/seeds/stock_symbols.csv` — company metadata for dim_companies
+
+---
+
+## Historical Data Backfill
+
+For Yahoo Finance-style period filters (1D, 5D, 1M, 6M, YTD, 1Y, 5Y, All), historical data is backfilled from yfinance.
+
+### Running the Backfill
+```bash
+# Install dependencies
+cd scripts && uv sync && cd ..
+
+# Run backfill (loads 5Y daily + 2Y hourly data)
+uv run --directory scripts python backfill_historical.py
+
+# Rebuild dbt models
+docker exec dbt-runner dbt run --full-refresh --project-dir /usr/app/dbt --profiles-dir /usr/app/dbt
+```
+
+### How It Works
+1. `scripts/backfill_historical.py` fetches OHLCV from Yahoo Finance via yfinance
+2. Data loads into `INTERMEDIATE.STOCK_OHLCV_HISTORICAL` table
+3. `int_stock_ohlcv` unions real-time data with historical, preferring real-time for overlaps
+4. Downstream models (`fct_stock_ohlcv_hourly`, etc.) inherit the combined dataset
+
+### Data Granularity
+- **Daily**: 2020-01-01 to present (5+ years)
+- **Hourly**: ~2 years (yfinance limitation)
+
+---
+
 ## Snowflake Object Inventory
 
 | Object | Name | Notes |
@@ -161,6 +220,7 @@ The `finnhub-producer` service supports two modes, configurable via `.env`:
 | Schema | `MARTS` | dbt incremental tables |
 | Schema | `SEEDS` | dbt CSV seeds |
 | Raw table | `RAW.STOCK_TRADES_RAW` | VARIANT, 3-day retention |
+| Historical table | `INTERMEDIATE.STOCK_OHLCV_HISTORICAL` | yfinance backfill (5Y daily, 2Y hourly) |
 | Stage | `RAW.S3_TRADES_STAGE` | External, Storage Integration |
 | Pipe | `RAW.TRADES_PIPE` | AUTO_INGEST = TRUE |
 | Integration | `STOCK_ANALYTICS_S3_INT` | IAM role-based, no static keys |
@@ -224,6 +284,8 @@ dbt/macros/generate_schema_name.sql  ← schemas named exactly, no prefix
 snowflake/setup/01–07_*.sql       ← ordered Snowflake provisioning scripts
 snowflake/queries/monitoring_queries.sql
 scripts/init.sh / start.sh / stop.sh
+scripts/backfill_historical.py    ← one-time historical data backfill from yfinance
+scripts/pyproject.toml            ← dependencies for backfill script (uv managed)
 ```
 
 ---
@@ -295,3 +357,6 @@ scripts/init.sh / start.sh / stop.sh
 | 2026-03-12 | **Snowflake timezone fix**: Updated `stg_stock_trades` to convert timestamps from UTC to US/Eastern using `convert_timezone('UTC', 'America/New_York', ...)`; all downstream models now show trades in market-local time |
 | 2026-03-12 | **dim_date model**: Fixed incomplete model (missing SELECT); changed `date_key` from hash to integer YYYYMMDD format (e.g., 20260312) for efficient Power BI relationships; added calendar attributes (quarter, day_of_week, day_name, month_name, is_weekday, is_trading_day) |
 | 2026-03-12 | **Fact table enhancements**: Added `date_key` FK to `fct_stock_trades` and `fct_stock_ohlcv_hourly` for dim_date joins; changed `traded_hour` to TIME type and `traded_date` to DATE type; added `traded_date`/`traded_hour` columns to `fct_stock_ohlcv_hourly` split from `hour_bucket` |
+| 2026-03-16 | **Previous day close metrics**: Added `prev_day_close`, `change_from_prev_close`, `pct_change_from_prev_close` columns to `fct_stock_ohlcv_hourly` for Yahoo Finance-style price change display |
+| 2026-03-16 | **Historical data backfill**: Created `scripts/backfill_historical.py` to load 5Y daily + 2Y hourly OHLCV from yfinance; added `INTERMEDIATE.STOCK_OHLCV_HISTORICAL` source table; updated `int_stock_ohlcv` to union real-time with historical data |
+| 2026-03-16 | **Expanded to 20 symbols**: Added UNH, XOM, WMT, MA, NFLX, AVGO, AMD, CRM, ORCL, DIS; updated `kafka/producer/config.py` and `dbt/seeds/stock_symbols.csv` |

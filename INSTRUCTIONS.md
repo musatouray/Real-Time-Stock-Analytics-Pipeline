@@ -22,9 +22,10 @@ Replace every `<PLACEHOLDER>` with your actual value before running.
 | [Phase 7](#phase-7--verify-snowpipe-ingestion) | Verify Snowpipe Ingestion |
 | [Phase 8](#phase-8--dbt-transformations) | dbt Transformations |
 | [Phase 9](#phase-9--airflow-orchestration) | Airflow Orchestration |
-| [Phase 10](#phase-10--power-bi-connection) | Power BI Connection |
-| [Phase 11](#phase-11--local-dev-setup) | Local Dev Setup (optional) |
-| [Phase 12](#phase-12--daily-operations) | Daily Operations |
+| [Phase 10](#phase-10--historical-data-backfill) | Historical Data Backfill (optional) |
+| [Phase 11](#phase-11--power-bi-connection) | Power BI Connection |
+| [Phase 12](#phase-12--local-dev-setup) | Local Dev Setup (optional) |
+| [Phase 13](#phase-13--daily-operations) | Daily Operations |
 | [Quick Reference](#quick-reference--urls-and-ports) | URLs and Ports |
 | [Troubleshooting](#troubleshooting) | Troubleshooting |
 
@@ -82,7 +83,38 @@ If you don't have them already:
 
 Keep all credentials handy — you will need them in Phase 2.
 
-### Step 0.5 — Install Power BI Desktop (Windows only)
+### Step 0.5 — Review tracked symbols
+
+The pipeline tracks 20 major NASDAQ and NYSE stocks:
+
+| Symbol | Company | Sector |
+|--------|---------|--------|
+| AAPL | Apple Inc. | Technology |
+| MSFT | Microsoft Corporation | Technology |
+| GOOGL | Alphabet Inc. | Communication Services |
+| AMZN | Amazon.com Inc. | Consumer Cyclical |
+| NVDA | NVIDIA Corporation | Technology |
+| TSLA | Tesla Inc. | Consumer Cyclical |
+| META | Meta Platforms Inc. | Communication Services |
+| JPM | JPMorgan Chase & Co. | Financial Services |
+| V | Visa Inc. | Financial Services |
+| JNJ | Johnson & Johnson | Healthcare |
+| UNH | UnitedHealth Group Inc. | Healthcare |
+| XOM | Exxon Mobil Corporation | Energy |
+| WMT | Walmart Inc. | Consumer Defensive |
+| MA | Mastercard Inc. | Financial Services |
+| NFLX | Netflix Inc. | Communication Services |
+| AVGO | Broadcom Inc. | Technology |
+| AMD | Advanced Micro Devices Inc. | Technology |
+| CRM | Salesforce Inc. | Technology |
+| ORCL | Oracle Corporation | Technology |
+| DIS | The Walt Disney Company | Communication Services |
+
+To modify symbols, update:
+- `kafka/producer/config.py` — real-time streaming
+- `dbt/seeds/stock_symbols.csv` — company metadata for dim_companies
+
+### Step 0.6 — Install Power BI Desktop (Windows only)
 
 Download: https://www.microsoft.com/en-us/download/details.aspx?id=58494
 
@@ -600,7 +632,7 @@ docker compose exec dbt dbt run \
     --profiles-dir /usr/app/dbt
 ```
 
-Expected: 3 models created (`fct_stock_trades`, `fct_stock_ohlcv_hourly`, `dim_companies`)
+Expected: 4 models created (`fct_stock_trades`, `fct_stock_ohlcv_hourly`, `dim_companies`, `dim_date`)
 
 ### Step 8.5 — Run all models at once
 
@@ -625,11 +657,27 @@ All tests should pass (unique, not_null, positive volume).
 ### Step 8.7 — Verify transformed data in Snowflake
 
 ```sql
-SELECT symbol, hour_bucket, open_price, close_price, vwap, total_volume, pct_change
+SELECT
+    symbol,
+    hour_bucket,
+    open_price,
+    close_price,
+    vwap,
+    total_volume,
+    pct_change,
+    prev_day_close,
+    change_from_prev_close,
+    pct_change_from_prev_close
 FROM STOCK_ANALYTICS_DB.MARTS.FCT_STOCK_OHLCV_HOURLY
 ORDER BY hour_bucket DESC
 LIMIT 20;
 ```
+
+Key columns:
+- `pct_change`: Hourly change (close - open) / open
+- `prev_day_close`: Previous trading day's closing price
+- `change_from_prev_close`: Dollar change from previous day's close (Yahoo Finance style)
+- `pct_change_from_prev_close`: Percentage change from previous day's close
 
 ### Step 8.8 — Generate and serve dbt documentation
 
@@ -738,19 +786,71 @@ Both will run automatically from now on. No manual trigger needed.
 
 ---
 
-## Phase 10 — Power BI Connection
+## Phase 10 — Historical Data Backfill
 
-### Step 10.1 — Install the Snowflake ODBC driver
+> Optional — enables Yahoo Finance-style period filters (1D, 5D, 1M, 6M, YTD, 1Y, 5Y, All)
+
+### Step 10.1 — Install backfill script dependencies
+
+```bash
+cd scripts && uv sync && cd ..
+```
+
+Required packages: `yfinance`, `snowflake-connector-python`, `pandas`, `python-dotenv`
+
+### Step 10.2 — Run the backfill script
+
+```bash
+uv run --directory scripts python backfill_historical.py
+```
+
+This fetches:
+- **Daily data**: 2020-01-01 to present (5+ years)
+- **Hourly data**: ~2 years back (yfinance limitation)
+
+For all 20 tracked symbols. Data loads into `INTERMEDIATE.STOCK_OHLCV_HISTORICAL`.
+
+### Step 10.3 — Rebuild dbt models with historical data
+
+```bash
+docker compose exec dbt dbt run --full-refresh \
+    --project-dir /usr/app/dbt \
+    --profiles-dir /usr/app/dbt
+```
+
+The `int_stock_ohlcv` model automatically unions historical data with real-time data, preferring real-time for any overlapping periods.
+
+### Step 10.4 — Verify historical data in Snowflake
+
+```sql
+-- Check historical table
+SELECT COUNT(*), MIN(hour_bucket), MAX(hour_bucket)
+FROM STOCK_ANALYTICS_DB.INTERMEDIATE.STOCK_OHLCV_HISTORICAL;
+
+-- Check combined data in marts
+SELECT symbol, MIN(hour_bucket) as earliest, MAX(hour_bucket) as latest
+FROM STOCK_ANALYTICS_DB.MARTS.FCT_STOCK_OHLCV_HOURLY
+GROUP BY symbol
+ORDER BY symbol;
+```
+
+You should see data going back to 2020 for daily granularity.
+
+---
+
+## Phase 11 — Power BI Connection
+
+### Step 11.1 — Install the Snowflake ODBC driver
 
 Download: https://developers.snowflake.com/odbc/
 
 Install and follow the setup wizard.
 
-### Step 10.2 — Open Power BI Desktop
+### Step 11.2 — Open Power BI Desktop
 
 File → New report (blank)
 
-### Step 10.3 — Connect to Snowflake
+### Step 11.3 — Connect to Snowflake
 
 Home → Get data → More → Search "Snowflake" → Connect
 
@@ -770,25 +870,26 @@ Authentication: Database
 
 Click Connect.
 
-### Step 10.4 — Load the mart tables
+### Step 11.4 — Load the mart tables
 
 In the Navigator panel expand: `STOCK_ANALYTICS_DB` → `MARTS`
 
-Check these three tables:
+Check these tables:
 - [ ] `DIM_COMPANIES`
+- [ ] `DIM_DATE`
 - [ ] `FCT_STOCK_TRADES`
 - [ ] `FCT_STOCK_OHLCV_HOURLY`
 
 Click **Load** (Import mode) or **Transform Data** (if you want to preview first).
 
-### Step 10.5 — Set up Direct Query for near-real-time refresh (optional)
+### Step 11.5 — Set up Direct Query for near-real-time refresh (optional)
 
 1. Go back to Get data → Snowflake
 2. At the bottom of the connection dialog, select: **DirectQuery**
 
 This makes Power BI query Snowflake live on each report refresh.
 
-### Step 10.6 — Build your first visual (Volatility Heatmap)
+### Step 11.6 — Build your first visual (Volatility Heatmap)
 
 In the Fields panel, drag:
 
@@ -802,17 +903,17 @@ Change visual type to: **Matrix**
 
 Apply a color scale to Values to create the heatmap effect.
 
-### Step 10.7 — Save your Power BI report
+### Step 11.7 — Save your Power BI report
 
 File → Save As → `stock_analytics_dashboard.pbix`
 
 ---
 
-## Phase 11 — Local Dev Setup
+## Phase 12 — Local Dev Setup
 
 > Optional — for VS Code IntelliSense
 
-### Step 11.1 — Create local virtual environments
+### Step 12.1 — Create local virtual environments
 
 ```bash
 make dev-setup
@@ -820,7 +921,7 @@ make dev-setup
 
 This creates a `.venv/` inside each service folder.
 
-### Step 11.2 — Point VS Code to the right interpreter
+### Step 12.2 — Point VS Code to the right interpreter
 
 | For files in... | Choose interpreter... |
 |-----------------|----------------------|
@@ -830,7 +931,7 @@ This creates a `.venv/` inside each service folder.
 
 `Ctrl+Shift+P` → Python: Select Interpreter
 
-### Step 11.3 — Verify IntelliSense works
+### Step 12.3 — Verify IntelliSense works
 
 1. Open `airflow/dags/stock_pipeline_dag.py`
 2. Hover over `SnowflakeHook` — you should see its docstring
@@ -838,7 +939,7 @@ This creates a `.venv/` inside each service folder.
 
 ---
 
-## Phase 12 — Daily Operations
+## Phase 13 — Daily Operations
 
 ### Stop everything (data volumes preserved)
 
