@@ -5,7 +5,18 @@
       "Bash(git checkout:*)",
       "Bash(docker compose exec dbt dbt seed:*)",
       "Bash(powershell:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git merge:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker inspect:*)",
+      "Bash(docker info:*)",
+      "Bash(docker compose ps:*)",
+      "Bash(docker:*)",
+      "Bash(echo:*)"
     ]
   }
 }

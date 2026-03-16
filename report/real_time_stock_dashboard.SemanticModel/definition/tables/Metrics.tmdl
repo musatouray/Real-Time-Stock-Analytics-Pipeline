@@ -99,10 +99,9 @@ table Metrics
 		lineageTag: m204-vwap-div-pct
 
 	/// Categorizes VWAP position: Above (buying pressure), Below (distribution), or Neutral.
-	measure 'VWAP Signal' = ```
-		VAR Divergence = [VWAP Divergence %]
-		RETURN SWITCH(TRUE(), Divergence > 0.005, "Above VWAP (Buying Pressure)", Divergence < -0.005, "Below VWAP (Distribution)", "Near VWAP (Neutral)")
-		```
+	measure 'VWAP Signal' =
+			VAR Divergence = [VWAP Divergence %]
+			RETURN SWITCH(TRUE(), Divergence > 0.005, "Above VWAP (Buying Pressure)", Divergence < -0.005, "Below VWAP (Distribution)", "Near VWAP (Neutral)")
 		displayFolder: Q2 - VWAP Analysis
 		lineageTag: 21d7743c-ac0e-4a2e-87f0-b58c3008183e
 
@@ -191,11 +190,10 @@ table Metrics
 		lineageTag: m404-vol-avg-trade-count
 
 	/// Ratio of current volume to average volume. Values > 1.5 indicate volume spikes.
-	measure 'Volume vs Avg Ratio' = ```
-		VAR CurrentVolume = SUM(fct_stock_ohlcv_hourly[TOTAL_VOLUME])
-		VAR AvgVolume = CALCULATE(AVERAGE(fct_stock_ohlcv_hourly[TOTAL_VOLUME]), ALLSELECTED(fct_stock_ohlcv_hourly[TRADED_DATE]), ALLSELECTED(fct_stock_ohlcv_hourly[TRADED_HOUR]))
-		RETURN DIVIDE(CurrentVolume, AvgVolume, 0)
-		```
+	measure 'Volume vs Avg Ratio' =
+			VAR CurrentVolume = SUM(fct_stock_ohlcv_hourly[TOTAL_VOLUME])
+			VAR AvgVolume = CALCULATE(AVERAGE(fct_stock_ohlcv_hourly[TOTAL_VOLUME]), ALLSELECTED(fct_stock_ohlcv_hourly[TRADED_DATE]), ALLSELECTED(fct_stock_ohlcv_hourly[TRADED_HOUR]))
+			RETURN DIVIDE(CurrentVolume, AvgVolume, 0)
 		formatString: 0.00
 		displayFolder: Q4 - Volume Analysis
 		lineageTag: c3516f0b-4937-4706-b0b2-f30eaae02789
@@ -212,20 +210,18 @@ table Metrics
 		lineageTag: m407-vol-per-trade
 
 	/// Calculates hourly return as (close - open) / open. Used for correlation analysis.
-	measure 'Hourly Return' = ```
-		VAR CurrentClose = AVERAGE(fct_stock_ohlcv_hourly[CLOSE_PRICE])
-		VAR PriorClose = AVERAGE(fct_stock_ohlcv_hourly[OPEN_PRICE])
-		RETURN DIVIDE(CurrentClose - PriorClose, PriorClose, 0)
-		```
+	measure 'Hourly Return' =
+			VAR CurrentClose = AVERAGE(fct_stock_ohlcv_hourly[CLOSE_PRICE])
+			VAR PriorClose = AVERAGE(fct_stock_ohlcv_hourly[OPEN_PRICE])
+			RETURN DIVIDE(CurrentClose - PriorClose, PriorClose, 0)
 		formatString: 0.00%
 		displayFolder: Q5 - Correlation
 		lineageTag: 13d6c624-6281-4bc3-bae9-36fb607421d4
 
 	/// Calculates variance of hourly returns. Higher variance indicates less predictable movements.
-	measure 'Return Variance' = ```
-		VAR AvgReturn = [Avg Price Change %]
-		RETURN AVERAGEX(fct_stock_ohlcv_hourly, POWER(fct_stock_ohlcv_hourly[PCT_CHANGE] - AvgReturn, 2))
-		```
+	measure 'Return Variance' =
+			VAR AvgReturn = [Avg Price Change %]
+			RETURN AVERAGEX(fct_stock_ohlcv_hourly, POWER(fct_stock_ohlcv_hourly[PCT_CHANGE] - AvgReturn, 2))
 		formatString: 0.0000
 		displayFolder: Q5 - Correlation
 		lineageTag: m502-corr-variance
@@ -242,29 +238,304 @@ table Metrics
 		displayFolder: Q5 - Correlation
 		lineageTag: m504-corr-sharpe
 
-	/// Averages hourly opening prices in the filtered context.
-	measure 'Avg Open Price' = AVERAGE(fct_stock_ohlcv_hourly[OPEN_PRICE])
-		formatString: $#,##0.00
+	measure 'Pct Change from Prev Close (capped)' = ```
+			
+			  VAR __Symbol = SELECTEDVALUE(fct_stock_ohlcv_hourly[SYMBOL])
+			  VAR __Cutoff = [Trading Time CutOff]
+			
+			  VAR __LatestRowForSymbol =
+			      TOPN(
+			          1,
+			          FILTER(
+			              ALLSELECTED(fct_stock_ohlcv_hourly),
+			              fct_stock_ohlcv_hourly[SYMBOL] = __Symbol
+			              && (fct_stock_ohlcv_hourly[TRADED_DATE] + fct_stock_ohlcv_hourly[TRADED_HOUR]) <= __Cutoff
+			          ),
+			          (fct_stock_ohlcv_hourly[TRADED_DATE] + fct_stock_ohlcv_hourly[TRADED_HOUR]),
+			          DESC
+			      )
+			
+			  VAR __Result = MAXX(__LatestRowForSymbol, fct_stock_ohlcv_hourly[PCT_CHANGE_FROM_PREV_CLOSE])
+			
+			  RETURN
+			    __Result
+			    
+			```
+		formatString: #,0.00%;-#,0.00%;#,0.00%
 		displayFolder: OHLCV Metrics
-		lineageTag: m601-ohlcv-avg-open
+		lineageTag: a3227dde-f02f-46a8-8258-d99534293426
 
-	/// Averages hourly high prices in the filtered context.
-	measure 'Avg High Price' = AVERAGE(fct_stock_ohlcv_hourly[HIGH_PRICE])
-		formatString: $#,##0.00
+	measure 'Change from Prev Close (capped)' = ```
+			
+			  VAR __Symbol = SELECTEDVALUE(fct_stock_ohlcv_hourly[SYMBOL])
+			  VAR __Cutoff = [Trading Time CutOff]
+			
+			  VAR __LatestRowForSymbol =
+			      TOPN(
+			          1,
+			          FILTER(
+			              ALLSELECTED(fct_stock_ohlcv_hourly),
+			              fct_stock_ohlcv_hourly[SYMBOL] = __Symbol
+			              && (fct_stock_ohlcv_hourly[TRADED_DATE] + fct_stock_ohlcv_hourly[TRADED_HOUR]) <= __Cutoff
+			          ),
+			          (fct_stock_ohlcv_hourly[TRADED_DATE] + fct_stock_ohlcv_hourly[TRADED_HOUR]),
+			          DESC
+			      )
+			
+			    VAR __Result = MAXX(__LatestRowForSymbol, fct_stock_ohlcv_hourly[CHANGE_FROM_PREV_CLOSE])
+			
+			    RETURN
+			    __Result
+			
+			```
+		formatString: 0.00
 		displayFolder: OHLCV Metrics
-		lineageTag: m602-ohlcv-avg-high
+		lineageTag: 872afbf3-f961-420e-9a53-e418e158772c
 
-	/// Averages hourly low prices in the filtered context.
-	measure 'Avg Low Price' = AVERAGE(fct_stock_ohlcv_hourly[LOW_PRICE])
-		formatString: $#,##0.00
+	measure 'SVG Change' = ```
+			
+			VAR __ChangePreviousClose = [Change from Prev Close (capped)]
+			VAR __ChangePreviousClosePercent = [Pct Change from Prev Close (capped)]
+			
+			// Formatting
+			VAR __green = "#aacc66"
+			VAR __red = "#FF6600"
+			VAR __color = IF(__ChangePreviousClose >= 0, __green, __red)
+			
+			VAR __valText = FORMAT(__ChangePreviousClose, "+0.00;-0.00")
+			VAR __pctText = "(" & FORMAT(__ChangePreviousClosePercent, "+0.0%;-0.0%") & ")"
+			
+			
+			RETURN
+			"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40'>
+			    <g transform='translate(5, 5)' stroke='" & __color & "' stroke-width='2.5' fill='none'>
+			        " & IF(__ChangePreviousClose >= 0, 
+			            "<polyline points='18 7 11 14 7 10 2 15'></polyline><polyline points='13 7 18 7 18 12'></polyline>", 
+			            "<polyline points='18 15 11 8 7 12 2 7'></polyline><polyline points='13 15 18 15 18 10'></polyline>"
+			        ) & "
+			    </g>
+			    <text x='35' y='16' fill='" & __color & "' font-family='Segoe UI, Arial' font-size='18' font-weight='semi-bold'>" & __valText & "</text>
+			    <text x='35' y='32' fill='" & __color & "' font-family='Segoe UI, Arial' font-size='14'>" & __pctText & "</text>
+			</svg>"
+			
+			
+			```
 		displayFolder: OHLCV Metrics
-		lineageTag: m603-ohlcv-avg-low
+		lineageTag: 89e0dc1b-bf2a-4ec9-897c-f35c32866e6b
+		dataCategory: ImageUrl
 
-	/// Returns the most recent closing price. Useful for current price cards.
-	measure 'Latest Close Price' = CALCULATE(LASTNONBLANK(fct_stock_ohlcv_hourly[CLOSE_PRICE], 1), LASTNONBLANK(fct_stock_ohlcv_hourly[TRADED_DATE], 1))
-		formatString: $#,##0.00
+	measure 'As of Date' = ```
+			
+			/* Detect whether the user has actively filtered the date slicer (single date or range).
+			   Uses ALLSELECTED to respect only the user's explicit selection and ignore implicit filters. */
+			VAR __IsDateFiltered =
+			    CALCULATE(
+			        ISFILTERED(dim_date[DATE]),
+			        ALLSELECTED(dim_date)
+			    )
+			
+			/* When the user has filtered the date slicer, return the maximum date from that slicer selection. */
+			VAR __MaxDimDate =
+			    IF(
+			        __IsDateFiltered,
+			        MAX(dim_date[DATE])
+			    )
+			
+			/* When no slicer selection exists, return the latest available trade date. */
+			VAR __FactMaxDate =
+			    CALCULATE(
+			      MAX(fct_stock_ohlcv_hourly[TRADED_DATE]),
+			        ALLSELECTED(fct_stock_ohlcv_hourly[SYMBOL])
+			    )
+			
+			
+			RETURN
+			COALESCE(__MaxDimDate, __FactMaxDate)
+			
+			```
+		formatString: Short Date
+		displayFolder: Dynamic Period Filter
+		lineageTag: a21be7c0-e459-46dc-b9e5-c33b781ee871
+
+	measure 'Dates Range Subtitle' = ```
+			
+			VAR __CalcItem = SELECTEDVALUE('Period Filter'[Period])
+			VAR __Min = CALCULATE(MIN(fct_stock_ohlcv_hourly[TRADED_DATE]))
+			VAR __Max = CALCULATE(MAX(fct_stock_ohlcv_hourly[TRADED_DATE]))
+			VAR __MaxHour = CALCULATE(MAX(fct_stock_ohlcv_hourly[TRADED_HOUR]), ALLSELECTED(fct_stock_ohlcv_hourly[SYMBOL]))
+			VAR __MaxDateTime = IF(NOT(ISBLANK(__MaxHour)), __Max + __MaxHour, __Max)
+			VAR __TodayFormat = FORMAT(__MaxDateTime, "MMMM d") & " at " & FORMAT(__MaxDateTime, "h:mm:ss AM/PM")
+			VAR __RangeFormat = FORMAT(__Min, "MMMM d") & " to " & FORMAT(__Max, "MMMM d")
+			VAR __TodayUTCDate = DATE(YEAR(UTCNOW()), MONTH(UTCNOW()), DAY(UTCNOW()))
+			VAR __IsWeekend = WEEKDAY(__TodayUTCDate, 2) >= 6
+			VAR __WeekendCloseMessage = "Trade prices at close: " & FORMAT(__MaxDateTime, "MMMM d") & " at " & FORMAT(__MaxDateTime, "h:mm:ss AM/PM")
+			
+			RETURN
+			SWITCH(
+			    __CalcItem,
+			    "1D", IF(__IsWeekend, __WeekendCloseMessage, "Real-time trade prices as of " & __TodayFormat),
+			    "5D", "Trade prices as of the last 5 Days - (" & __RangeFormat & ")",
+			    "1M", "Trade prices as of the last 1 Month - (" & __RangeFormat & ")",
+			    "6M", "Trade prices as of the last 6 Months - (" & __RangeFormat & ")",
+			    "1Y", "Trade prices as of the last 1 Year - (" & __RangeFormat & ")",
+			    "5Y", "Trade prices as of the last 5 Years - (" & __RangeFormat & ")",
+			    "YTD", "Trade prices as of current year to date - (" & __RangeFormat & ")",
+			    "All", "Trade prices for all available data - (" & __RangeFormat & ")",
+			    "Period not selected"
+			)
+			
+			```
+		displayFolder: Dynamic Period Filter
+		lineageTag: 8970ed2f-471e-408a-99dd-80731758fdd3
+
+	measure 'Trading Time CutOff' = ```
+			
+			/* Returns the effective as‑of datetime capped to 4:00:00 PM ET for the latest trading date
+			   in the current symbol selection. If the latest date is a weekend, it uses the last trading date. */
+			VAR __FactMaxDate =
+			    CALCULATE(
+			        MAX(fct_stock_ohlcv_hourly[TRADED_DATE]),
+			        ALLSELECTED(fct_stock_ohlcv_hourly[SYMBOL])
+			    )
+			
+			VAR __NoData = ISBLANK(__FactMaxDate)
+			
+			VAR __IsWeekend =
+			    IF(__NoData, FALSE(), WEEKDAY(__FactMaxDate, 2) >= 6)
+			
+			VAR __TradingDate =
+			    IF(
+			        __IsWeekend,
+			        CALCULATE(
+			            MAX(fct_stock_ohlcv_hourly[TRADED_DATE]),
+			            FILTER(
+			                ALL(fct_stock_ohlcv_hourly),
+			                fct_stock_ohlcv_hourly[TRADED_DATE] < __FactMaxDate
+			            )
+			        ),
+			        __FactMaxDate
+			    )
+			
+			VAR __FactMaxHourForTradingDate =
+			    CALCULATE(
+			        MAX(fct_stock_ohlcv_hourly[TRADED_HOUR]),
+			        FILTER(
+			            ALLSELECTED(fct_stock_ohlcv_hourly),
+			            fct_stock_ohlcv_hourly[TRADED_DATE] = __TradingDate
+			        )
+			    )
+			
+			VAR __FactMaxDateTime =
+			    IF(
+			        NOT( ISBLANK(__FactMaxHourForTradingDate) ),
+			        __TradingDate + __FactMaxHourForTradingDate,
+			        BLANK()
+			    )
+			
+			VAR __CloseCutoff = IF( NOT(ISBLANK(__TradingDate)), __TradingDate + TIME(16,0,0), BLANK() )
+			
+			VAR __EffectiveDateTime =
+			    IF(
+			        ISBLANK(__TradingDate),
+			        BLANK(),
+			        IF(
+			            NOT( ISBLANK(__FactMaxDateTime) ),
+			            IF(__FactMaxDateTime > __CloseCutoff, __CloseCutoff, __FactMaxDateTime),
+			            __CloseCutoff
+			        )
+			    )
+			
+			RETURN
+			__EffectiveDateTime
+			
+			```
+		formatString: General Date
+		displayFolder: Dynamic Period Filter
+		lineageTag: 38157977-cf56-46a7-83b4-7da089e03e0c
+
+	measure 'Avg High Price (capped)' = ```
+			
+			VAR _Cutoff = [Trading Time CutOff]
+			RETURN
+			CALCULATE(
+			    AVERAGE(fct_stock_ohlcv_hourly[HIGH_PRICE]),
+			    KEEPFILTERS(
+			        FILTER(
+			            ALLSELECTED(fct_stock_ohlcv_hourly),
+			            (fct_stock_ohlcv_hourly[TRADED_DATE] + fct_stock_ohlcv_hourly[TRADED_HOUR]) <= _Cutoff
+			        )
+			    )
+			)
+			
+			```
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
 		displayFolder: OHLCV Metrics
-		lineageTag: m604-ohlcv-latest-close
+		lineageTag: 5949a7f8-81e1-48ed-a9af-ba44076eea26
+
+	measure 'Latest Close Price (capped)' = ```
+			
+			VAR __Symbol = SELECTEDVALUE(fct_stock_ohlcv_hourly[SYMBOL])
+			VAR __Cutoff = [Trading Time CutOff]
+			
+			VAR __LatestRowForSymbol =
+			    TOPN(
+			        1,
+			        FILTER(
+			            ALLSELECTED(fct_stock_ohlcv_hourly),
+			            fct_stock_ohlcv_hourly[SYMBOL] = __Symbol
+			            && (fct_stock_ohlcv_hourly[TRADED_DATE] + fct_stock_ohlcv_hourly[TRADED_HOUR]) <= __Cutoff
+			        ),
+			        (fct_stock_ohlcv_hourly[TRADED_DATE] + fct_stock_ohlcv_hourly[TRADED_HOUR]),
+			        DESC
+			    )
+			
+			RETURN
+			 MAXX(__LatestRowForSymbol, fct_stock_ohlcv_hourly[CLOSE_PRICE])
+			
+			
+			
+			```
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		displayFolder: OHLCV Metrics
+		lineageTag: 0b11ce22-2fc2-4132-ba73-3b2db2885e1c
+
+	measure 'Avg Open Price (capped)' = ```
+			
+			VAR _Cutoff = [Trading Time CutOff]
+			RETURN
+			CALCULATE(
+			    AVERAGE(fct_stock_ohlcv_hourly[OPEN_PRICE]),
+			    KEEPFILTERS(
+			        FILTER(
+			            ALLSELECTED(fct_stock_ohlcv_hourly),
+			            (fct_stock_ohlcv_hourly[TRADED_DATE] + fct_stock_ohlcv_hourly[TRADED_HOUR]) <= _Cutoff
+			        )
+			    )
+			)
+			
+			```
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		displayFolder: OHLCV Metrics
+		lineageTag: a9d231b4-bfa6-4414-9e74-241a901bdcc5
+
+	measure 'Avg Low Price (capped)' = ```
+			
+			VAR _Cutoff = [Trading Time CutOff]
+			RETURN
+			CALCULATE(
+			    AVERAGE(fct_stock_ohlcv_hourly[LOW_PRICE]),
+			    KEEPFILTERS(
+			        FILTER(
+			            ALLSELECTED(fct_stock_ohlcv_hourly),
+			            (fct_stock_ohlcv_hourly[TRADED_DATE] + fct_stock_ohlcv_hourly[TRADED_HOUR]) <= _Cutoff
+			        )
+			    )
+			)
+			
+			```
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		displayFolder: OHLCV Metrics
+		lineageTag: 579d19c5-1697-43fe-976b-853fb64419db
 
 	partition Metrics = m
 		mode: import
@@ -275,4 +546,6 @@ table Metrics
 					Table
 
 	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
 

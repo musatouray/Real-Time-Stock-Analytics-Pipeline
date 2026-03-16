@@ -1,0 +1,1336 @@
+createOrReplace
+
+	model Model
+		culture: en-US
+		defaultPowerBIDataSourceVersion: powerBI_V3
+		discourageImplicitMeasures
+		sourceQueryCulture: en-US
+		dataAccessOptions
+			legacyRedirects
+			returnErrorValuesAsNull
+
+		/// Company dimension table containing stock metadata. Links to fact tables via SYMBOL.
+		table dim_companies
+			lineageTag: 4e403a14-af18-4005-8329-7699c84369dd
+
+			/// Stock ticker symbol (e.g., AAPL, MSFT). Primary key for joining to fact tables.
+			column SYMBOL
+				dataType: string
+				lineageTag: 374f024b-3b65-4d67-969d-82a9d297aa79
+				summarizeBy: none
+				sourceColumn: SYMBOL
+
+				annotation SummarizationSetBy = Automatic
+
+			/// Full legal company name (e.g., Apple Inc., Microsoft Corporation).
+			column COMPANY_NAME
+				dataType: string
+				lineageTag: 514a7314-da54-446f-8633-22f88e12d925
+				summarizeBy: none
+				sourceColumn: COMPANY_NAME
+
+				annotation SummarizationSetBy = Automatic
+
+			/// Stock exchange where the security trades (NASDAQ or NYSE).
+			column EXCHANGE
+				dataType: string
+				lineageTag: 7c2a0cd7-c075-4ca1-988f-935fb866dd55
+				summarizeBy: none
+				sourceColumn: EXCHANGE
+
+				annotation SummarizationSetBy = Automatic
+
+			/// URL to company logo image. Used for visual display in reports.
+			column LOGO_URL
+				dataType: string
+				lineageTag: 385768ff-1263-43d4-8c1c-3b736c629ada
+				dataCategory: ImageUrl
+				summarizeBy: none
+				sourceColumn: LOGO_URL
+
+				annotation SummarizationSetBy = Automatic
+
+			column SECTOR
+				dataType: string
+				lineageTag: 0f5457ec-9992-45a0-9a44-a98f59cd5223
+				summarizeBy: none
+				sourceColumn: SECTOR
+
+				annotation SummarizationSetBy = Automatic
+
+			column INDUSTRY
+				dataType: string
+				lineageTag: bca7402d-04be-4981-a221-2c43a948b059
+				summarizeBy: none
+				sourceColumn: INDUSTRY
+
+				annotation SummarizationSetBy = Automatic
+
+			partition dim_companies = m
+				mode: import
+				source =
+						let
+						    Source = Snowflake.Databases("JDGAEPV-LHA81787.snowflakecomputing.com","STOCK_ANALYTICS_WH",[Implementation="1.0"]),
+						    STOCK_ANALYTICS_DB_Database = Source{[Name="STOCK_ANALYTICS_DB",Kind="Database"]}[Data],
+						    MARTS_Schema = STOCK_ANALYTICS_DB_Database{[Name="MARTS",Kind="Schema"]}[Data],
+						    DIM_COMPANIES_Table = MARTS_Schema{[Name="DIM_COMPANIES",Kind="Table"]}[Data],
+						    #"Removed Other Columns" = Table.SelectColumns(DIM_COMPANIES_Table,{"SYMBOL", "COMPANY_NAME", "SECTOR", "INDUSTRY", "EXCHANGE", "LOGO_URL"})
+						in
+						    #"Removed Other Columns"
+
+			annotation PBI_ResultType = Table
+
+			annotation PBI_NavigationStepName = Navigation
+
+		/// Hourly OHLCV fact table aggregating trade data into candlestick format. Grain: one row per (symbol, hour).
+		table fct_stock_ohlcv_hourly
+			lineageTag: 0e3171df-aa5a-49a2-8983-c2109231007c
+
+			/// Stock ticker symbol. Foreign key to dim_companies.
+			column SYMBOL
+				dataType: string
+				lineageTag: 13c7c7e0-cd74-4c16-b52a-cdc70a5b8c83
+				summarizeBy: none
+				sourceColumn: SYMBOL
+
+				annotation SummarizationSetBy = Automatic
+
+			/// First trade price within the hour. Used for candlestick open.
+			column OPEN_PRICE
+				dataType: double
+				lineageTag: 02103a5c-3136-4b55-8fa3-7a61d89c03c8
+				summarizeBy: sum
+				sourceColumn: OPEN_PRICE
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			/// Maximum trade price within the hour. Upper wick of candlestick.
+			column HIGH_PRICE
+				dataType: double
+				lineageTag: 1809f490-f9f2-454a-944a-fbe3af2c7b14
+				summarizeBy: sum
+				sourceColumn: HIGH_PRICE
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			/// Minimum trade price within the hour. Lower wick of candlestick.
+			column LOW_PRICE
+				dataType: double
+				lineageTag: be95c611-aee3-4b6b-8e4f-59c7f8f68d81
+				summarizeBy: sum
+				sourceColumn: LOW_PRICE
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			/// Last trade price within the hour. Used for candlestick close and VWAP comparison.
+			column CLOSE_PRICE
+				dataType: double
+				lineageTag: f1bda740-ddb3-4f3c-92df-1a9e9c1bf2ed
+				summarizeBy: sum
+				sourceColumn: CLOSE_PRICE
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			/// Total shares traded within the hour. Key metric for volume spike analysis.
+			column TOTAL_VOLUME
+				dataType: double
+				lineageTag: ca6dfb52-9f6f-4b95-9277-cce21ea5b5f4
+				summarizeBy: sum
+				sourceColumn: TOTAL_VOLUME
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			/// Number of individual trades within the hour. Indicates market participation level.
+			column TRADE_COUNT
+				dataType: double
+				lineageTag: 3ed49e2a-038c-4734-b37e-028780431693
+				summarizeBy: sum
+				sourceColumn: TRADE_COUNT
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			/// Volume-Weighted Average Price. Institutional benchmark for execution quality.
+			column VWAP
+				dataType: double
+				lineageTag: b321f0a2-c155-443c-97ea-c40d18134453
+				summarizeBy: sum
+				sourceColumn: VWAP
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			/// Standard deviation of trade prices within the hour. Primary volatility metric.
+			column STDDEV_PRICE
+				dataType: double
+				lineageTag: 0d560c83-b8e7-4193-8f83-9d7843bea5d2
+				summarizeBy: sum
+				sourceColumn: STDDEV_PRICE
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			/// High minus Low price (intraday range). Alternative volatility measure.
+			column PRICE_RANGE
+				dataType: double
+				lineageTag: 3a665413-425d-47af-9a58-8650019c5de3
+				summarizeBy: sum
+				sourceColumn: PRICE_RANGE
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			/// Percentage price change (close vs open). Key metric for momentum and correlation analysis.
+			column PCT_CHANGE
+				dataType: double
+				formatString: 0.00%;-0.00%;0.00%
+				lineageTag: a29bd5ef-18be-4997-8ecf-b4ed8153a0a2
+				summarizeBy: average
+				sourceColumn: PCT_CHANGE
+
+				annotation SummarizationSetBy = User
+
+			/// Calendar date of trading (US/Eastern timezone).
+			column TRADED_DATE
+				dataType: dateTime
+				formatString: Short Date
+				lineageTag: d7006fea-e1b3-48df-987e-b7d53ff9d995
+				summarizeBy: none
+				sourceColumn: TRADED_DATE
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation UnderlyingDateTimeDataType = Date
+
+			/// Hour of day (9 AM - 4 PM ET market hours). Use for intraday heatmaps.
+			column TRADED_HOUR
+				dataType: dateTime
+				formatString: Short Time
+				lineageTag: c52fd6d5-7621-4c29-a9b6-aff96a3e928d
+				summarizeBy: none
+				sourceColumn: TRADED_HOUR
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation UnderlyingDateTimeDataType = Time
+
+			/// Integer date key (YYYYMMDD format). Foreign key to dim_date.
+			column DATE_KEY
+				dataType: double
+				lineageTag: a67c361b-f0e4-406a-874a-0da1df3c990e
+				summarizeBy: none
+				sourceColumn: DATE_KEY
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			partition fct_stock_ohlcv_hourly = m
+				mode: import
+				source =
+						let
+						    Source = Snowflake.Databases("JDGAEPV-LHA81787.snowflakecomputing.com","STOCK_ANALYTICS_WH",[Implementation="1.0"]),
+						    STOCK_ANALYTICS_DB_Database = Source{[Name="STOCK_ANALYTICS_DB",Kind="Database"]}[Data],
+						    MARTS_Schema = STOCK_ANALYTICS_DB_Database{[Name="MARTS",Kind="Schema"]}[Data],
+						    FCT_STOCK_OHLCV_HOURLY_Table = MARTS_Schema{[Name="FCT_STOCK_OHLCV_HOURLY",Kind="Table"]}[Data],
+						    #"Removed Other Columns" = Table.SelectColumns(FCT_STOCK_OHLCV_HOURLY_Table,{"SYMBOL", "TRADED_DATE", "TRADED_HOUR", "OPEN_PRICE", "HIGH_PRICE", "LOW_PRICE", "CLOSE_PRICE", "TOTAL_VOLUME", "TRADE_COUNT", "VWAP", "STDDEV_PRICE", "PRICE_RANGE", "PCT_CHANGE", "DATE_KEY"})
+						in
+						    #"Removed Other Columns"
+
+			annotation PBI_ResultType = Table
+
+			annotation PBI_NavigationStepName = Navigation
+
+		/// Trade-level fact table containing individual stock transactions. Grain: one row per trade.
+		table fct_stock_trades
+			lineageTag: 8cc35b09-aa96-4155-9f04-0ba1e408c07b
+
+			/// Stock ticker symbol. Foreign key to dim_companies.
+			column SYMBOL
+				dataType: string
+				lineageTag: 04822078-6992-4f79-bd72-9658ef35aed9
+				summarizeBy: none
+				sourceColumn: SYMBOL
+
+				annotation SummarizationSetBy = Automatic
+
+			/// Trade execution price in USD.
+			column PRICE
+				dataType: double
+				lineageTag: 17af1e37-5bb2-4237-8c75-9e19e33d68df
+				summarizeBy: sum
+				sourceColumn: PRICE
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			/// Number of shares in this trade.
+			column VOLUME
+				dataType: double
+				lineageTag: 8b8a49ac-bc37-4709-9b8f-0c4bc97b4774
+				summarizeBy: sum
+				sourceColumn: VOLUME
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			/// Dollar value of trade (price x volume).
+			column TRADE_VALUE_USD
+				dataType: double
+				lineageTag: b991007a-df5c-4e19-82a7-27f0d6291f39
+				summarizeBy: sum
+				sourceColumn: TRADE_VALUE_USD
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			/// Exact timestamp of trade execution (US/Eastern timezone).
+			column TRADED_AT
+				dataType: dateTime
+				formatString: General Date
+				lineageTag: 30fb485c-6b84-46d8-a020-ea2f5981ee14
+				summarizeBy: none
+				sourceColumn: TRADED_AT
+
+				annotation SummarizationSetBy = Automatic
+
+			/// Hour component of trade time. Use for grouping trades by market hour.
+			column TRADED_HOUR
+				dataType: dateTime
+				formatString: Long Time
+				lineageTag: a29652fc-75a5-43ec-a347-a82a8e886185
+				summarizeBy: none
+				sourceColumn: TRADED_HOUR
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation UnderlyingDateTimeDataType = Time
+
+			/// Calendar date of trade (US/Eastern timezone).
+			column TRADED_DATE
+				dataType: dateTime
+				formatString: Long Date
+				lineageTag: c7a5eec1-2be8-451d-9da1-dfeb84568351
+				summarizeBy: none
+				sourceColumn: TRADED_DATE
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation UnderlyingDateTimeDataType = Date
+
+			/// Integer date key (YYYYMMDD format). Foreign key to dim_date.
+			column DATE_KEY
+				dataType: double
+				lineageTag: e7146304-f0e9-4d34-85e0-c7eefe79329c
+				summarizeBy: none
+				sourceColumn: DATE_KEY
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			partition fct_stock_trades = m
+				mode: import
+				source =
+						let
+						    Source = Snowflake.Databases("JDGAEPV-LHA81787.snowflakecomputing.com","STOCK_ANALYTICS_WH",[Implementation="1.0"]),
+						    STOCK_ANALYTICS_DB_Database = Source{[Name="STOCK_ANALYTICS_DB",Kind="Database"]}[Data],
+						    MARTS_Schema = STOCK_ANALYTICS_DB_Database{[Name="MARTS",Kind="Schema"]}[Data],
+						    FCT_STOCK_TRADES_Table = MARTS_Schema{[Name="FCT_STOCK_TRADES",Kind="Table"]}[Data],
+						    #"Removed Other Columns" = Table.SelectColumns(FCT_STOCK_TRADES_Table,{"SYMBOL", "PRICE", "VOLUME", "TRADE_VALUE_USD", "TRADED_AT", "TRADED_HOUR", "TRADED_DATE", "DATE_KEY"})
+						in
+						    #"Removed Other Columns"
+
+			annotation PBI_ResultType = Table
+
+			annotation PBI_NavigationStepName = Navigation
+
+		/// Calendar dimension table for date-based filtering and aggregation. Grain: one row per calendar day.
+		table dim_date
+			lineageTag: 4b305160-b680-4ca7-8174-bba6816e239e
+
+			/// Integer date key in YYYYMMDD format. Primary key for joining to fact tables.
+			column DATE_KEY
+				dataType: double
+				lineageTag: 000f9563-4000-4801-9ad1-b43628f726e8
+				summarizeBy: none
+				sourceColumn: DATE_KEY
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			/// Calendar date value. Use for date slicers and time intelligence.
+			column DATE
+				dataType: dateTime
+				formatString: Short Date
+				lineageTag: db6976b8-3804-4386-90fc-f92a1f423066
+				summarizeBy: none
+				sourceColumn: DATE
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation UnderlyingDateTimeDataType = Date
+
+			/// Four-digit year (e.g., 2026). Use for year-over-year comparisons.
+			column YEAR
+				dataType: int64
+				lineageTag: d2108909-ef1e-4c25-b7b9-39ac63d1a36b
+				summarizeBy: none
+				sourceColumn: YEAR
+
+				changedProperty = DataType
+
+				annotation SummarizationSetBy = User
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			/// Calendar quarter (1-4). Use for quarterly aggregations.
+			column QUARTER
+				dataType: double
+				lineageTag: acaade56-3eef-4a21-acf5-df19431e439d
+				summarizeBy: sum
+				sourceColumn: QUARTER
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			/// Month number (1-12). Use for monthly aggregations.
+			column MONTH
+				dataType: double
+				lineageTag: 68ff40c9-73e8-48e6-b5ae-9bfe1c72923a
+				summarizeBy: sum
+				sourceColumn: MONTH
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			/// Full month name (e.g., January, February). Use for display labels.
+			column MONTH_NAME
+				dataType: string
+				lineageTag: f2079eaa-e2de-4100-9c32-b7338a399364
+				summarizeBy: none
+				sourceColumn: MONTH_NAME
+				sortByColumn: MONTH
+
+				changedProperty = SortByColumn
+
+				annotation SummarizationSetBy = Automatic
+
+			/// ISO week number (1-52/53). Use for weekly aggregations.
+			column WEEK_OF_YEAR
+				dataType: double
+				lineageTag: 11cfebce-7716-45e0-ac16-4a625fb594c1
+				summarizeBy: sum
+				sourceColumn: WEEK_OF_YEAR
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			/// Day of month (1-31).
+			column DAY_OF_MONTH
+				dataType: double
+				lineageTag: e7ecc57a-f17e-463b-8aea-2d905cb20d95
+				summarizeBy: sum
+				sourceColumn: DAY_OF_MONTH
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			/// Day of week number (0=Sunday, 6=Saturday).
+			column DAY_OF_WEEK
+				dataType: double
+				lineageTag: 66e4afea-ac77-4dc8-bc6e-c5dc2c45a310
+				summarizeBy: sum
+				sourceColumn: DAY_OF_WEEK
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			/// Full day name (e.g., Monday, Tuesday). Use for day-of-week analysis.
+			column DAY_NAME
+				dataType: string
+				lineageTag: 58dd9f2d-31a3-47a8-8ef5-5767e82eb16a
+				summarizeBy: none
+				sourceColumn: DAY_NAME
+
+				annotation SummarizationSetBy = Automatic
+
+			/// TRUE if Monday-Friday, FALSE if Saturday-Sunday.
+			column IS_WEEKDAY
+				dataType: boolean
+				formatString: """TRUE"";""TRUE"";""FALSE"""
+				lineageTag: 3ffad92e-bb07-4d57-806e-e9f363cd1dfe
+				summarizeBy: none
+				sourceColumn: IS_WEEKDAY
+
+				annotation SummarizationSetBy = Automatic
+
+			/// TRUE if US stock market is open (weekday, non-holiday).
+			column IS_TRADING_DAY
+				dataType: boolean
+				formatString: """TRUE"";""TRUE"";""FALSE"""
+				lineageTag: a9779dba-7e2f-44f6-9d7c-1ceca29b9027
+				summarizeBy: none
+				sourceColumn: IS_TRADING_DAY
+
+				annotation SummarizationSetBy = Automatic
+
+			column MONTH_YEAR
+				dataType: string
+				lineageTag: 2d525d06-b84c-487f-a1ea-98549972886e
+				summarizeBy: none
+				sourceColumn: MONTH_YEAR
+				sortByColumn: MONTH
+
+				changedProperty = SortByColumn
+
+				annotation SummarizationSetBy = Automatic
+
+			partition dim_date = m
+				mode: import
+				source =
+						let
+						    Source = Snowflake.Databases("JDGAEPV-LHA81787.snowflakecomputing.com","STOCK_ANALYTICS_WH",[Implementation="1.0"]),
+						    STOCK_ANALYTICS_DB_Database = Source{[Name="STOCK_ANALYTICS_DB",Kind="Database"]}[Data],
+						    MARTS_Schema = STOCK_ANALYTICS_DB_Database{[Name="MARTS",Kind="Schema"]}[Data],
+						    DIM_COMPANIES_Table = MARTS_Schema{[Name="DIM_DATE",Kind="Table"]}[Data]
+						in
+						    DIM_COMPANIES_Table
+
+			annotation PBI_NavigationStepName = Navigation
+
+			annotation PBI_ResultType = Table
+
+		/// Centralized measures table containing all DAX calculations for the Stock Analytics dashboard.
+		table Metrics
+			lineageTag: 9a1b2c3d-4e5f-6789-abcd-ef0123456789
+
+			/// Counts all trade records in the filtered context.
+			measure 'Total Trades' = COUNTROWS(fct_stock_trades)
+				formatString: #,##0
+				displayFolder: Base Calculations
+				lineageTag: m001-base-total-trades
+
+			/// Sums the share volume across all trades in the filtered context.
+			measure 'Total Volume' = SUM(fct_stock_trades[VOLUME])
+				formatString: #,##0
+				displayFolder: Base Calculations
+				lineageTag: m002-base-total-volume
+
+			/// Sums the USD value (price x volume) of all trades in the filtered context.
+			measure 'Total Trade Value' = SUM(fct_stock_trades[TRADE_VALUE_USD])
+				formatString: $#,##0
+				displayFolder: Base Calculations
+				lineageTag: m003-base-total-trade-value
+
+			/// Calculates the simple average trade price in the filtered context.
+			measure 'Average Price' = AVERAGE(fct_stock_trades[PRICE])
+				formatString: $#,##0.00
+				displayFolder: Base Calculations
+				lineageTag: m004-base-avg-price
+
+			/// Counts the number of unique stock symbols in the filtered context.
+			measure 'Distinct Stocks' = DISTINCTCOUNT(fct_stock_trades[SYMBOL])
+				formatString: #,##0
+				displayFolder: Base Calculations
+				lineageTag: m005-base-distinct-stocks
+
+			/// Counts the number of unique trading days in the filtered context.
+			measure 'Trading Days' = DISTINCTCOUNT(fct_stock_trades[TRADED_DATE])
+				formatString: #,##0
+				displayFolder: Base Calculations
+				lineageTag: m006-base-trading-days
+
+			/// Counts the number of hourly OHLCV records in the filtered context.
+			measure 'Hourly Periods' = COUNTROWS(fct_stock_ohlcv_hourly)
+				formatString: #,##0
+				displayFolder: Base Calculations
+				lineageTag: m007-base-hourly-periods
+
+			/// Averages the hourly price standard deviation. Higher values indicate greater price dispersion.
+			measure 'Avg Volatility (StdDev)' = AVERAGE(fct_stock_ohlcv_hourly[STDDEV_PRICE])
+				formatString: 0.0000
+				displayFolder: Q1 - Volatility
+				lineageTag: m101-vol-avg-stddev
+
+			/// Returns the maximum hourly standard deviation. Identifies peak volatility periods.
+			measure 'Max Volatility (StdDev)' = MAX(fct_stock_ohlcv_hourly[STDDEV_PRICE])
+				formatString: 0.0000
+				displayFolder: Q1 - Volatility
+				lineageTag: m102-vol-max-stddev
+
+			/// Averages the hourly high-low price range. Measures intraday price swing magnitude.
+			measure 'Avg Price Range' = AVERAGE(fct_stock_ohlcv_hourly[PRICE_RANGE])
+				formatString: $#,##0.00
+				displayFolder: Q1 - Volatility
+				lineageTag: m103-vol-avg-range
+
+			/// Returns the maximum hourly high-low range. Identifies the widest price swings.
+			measure 'Max Price Range' = MAX(fct_stock_ohlcv_hourly[PRICE_RANGE])
+				formatString: $#,##0.00
+				displayFolder: Q1 - Volatility
+				lineageTag: m104-vol-max-range
+
+			/// Calculates price range as a percentage of the open price. Normalizes volatility for comparison.
+			measure 'Price Range %' = DIVIDE(AVERAGE(fct_stock_ohlcv_hourly[PRICE_RANGE]), AVERAGE(fct_stock_ohlcv_hourly[OPEN_PRICE]), 0)
+				formatString: 0.00%
+				displayFolder: Q1 - Volatility
+				lineageTag: m106-vol-range-pct
+
+			/// Averages the Volume-Weighted Average Price. Institutional fair value benchmark.
+			measure 'Avg VWAP' = AVERAGE(fct_stock_ohlcv_hourly[VWAP])
+				formatString: $#,##0.00
+				displayFolder: Q2 - VWAP Analysis
+				lineageTag: m201-vwap-avg
+
+			/// Averages the hourly closing prices in the filtered context.
+			measure 'Avg Close Price' = AVERAGE(fct_stock_ohlcv_hourly[CLOSE_PRICE])
+				formatString: $#,##0.00
+				displayFolder: Q2 - VWAP Analysis
+				lineageTag: m202-vwap-avg-close
+
+			/// Dollar difference between average close and VWAP. Positive = above fair value.
+			measure 'VWAP Divergence $' = [Avg Close Price] - [Avg VWAP]
+				formatString: $#,##0.00
+				displayFolder: Q2 - VWAP Analysis
+				lineageTag: m203-vwap-div-dollar
+
+			/// Percentage divergence from VWAP. Values > 0.5% or < -0.5% indicate significant deviation.
+			measure 'VWAP Divergence %' = DIVIDE([Avg Close Price] - [Avg VWAP], [Avg VWAP], 0)
+				formatString: 0.00%
+				displayFolder: Q2 - VWAP Analysis
+				lineageTag: m204-vwap-div-pct
+
+			/// Categorizes VWAP position: Above (buying pressure), Below (distribution), or Neutral.
+			measure 'VWAP Signal' =
+					VAR Divergence = [VWAP Divergence %]
+					RETURN SWITCH(TRUE(), Divergence > 0.005, "Above VWAP (Buying Pressure)", Divergence < -0.005, "Below VWAP (Distribution)", "Near VWAP (Neutral)")
+				displayFolder: Q2 - VWAP Analysis
+				lineageTag: 21d7743c-ac0e-4a2e-87f0-b58c3008183e
+
+			/// Counts hourly periods where close price exceeded VWAP. Indicates buying pressure.
+			measure 'Hours Above VWAP' = CALCULATE(COUNTROWS(fct_stock_ohlcv_hourly), fct_stock_ohlcv_hourly[CLOSE_PRICE] > fct_stock_ohlcv_hourly[VWAP])
+				formatString: #,##0
+				displayFolder: Q2 - VWAP Analysis
+				lineageTag: m206-vwap-hours-above
+
+			/// Counts hourly periods where close price was below VWAP. Indicates selling pressure.
+			measure 'Hours Below VWAP' = CALCULATE(COUNTROWS(fct_stock_ohlcv_hourly), fct_stock_ohlcv_hourly[CLOSE_PRICE] < fct_stock_ohlcv_hourly[VWAP])
+				formatString: #,##0
+				displayFolder: Q2 - VWAP Analysis
+				lineageTag: m207-vwap-hours-below
+
+			/// Percentage of hours trading above VWAP. Higher values suggest buying interest.
+			measure 'VWAP Win Rate' = DIVIDE([Hours Above VWAP], [Hourly Periods], 0)
+				formatString: 0.0%
+				displayFolder: Q2 - VWAP Analysis
+				lineageTag: m208-vwap-win-rate
+
+			/// Averages the hourly percentage price change. Positive = upward momentum.
+			measure 'Avg Price Change %' = AVERAGE(fct_stock_ohlcv_hourly[PCT_CHANGE])
+				formatString: 0.00%
+				displayFolder: Q3 - Momentum
+				lineageTag: m301-mom-avg-pct-change
+
+			/// Average price change during 9 AM hour (market open). Captures first-hour momentum.
+			measure 'Market Open Momentum' = CALCULATE(AVERAGE(fct_stock_ohlcv_hourly[PCT_CHANGE]), HOUR(fct_stock_ohlcv_hourly[TRADED_HOUR]) = 9)
+				formatString: 0.00%
+				displayFolder: Q3 - Momentum
+				lineageTag: m302-mom-market-open
+
+			/// Counts hours with positive price change. Indicates bullish momentum persistence.
+			measure 'Positive Momentum Hours' = CALCULATE(COUNTROWS(fct_stock_ohlcv_hourly), fct_stock_ohlcv_hourly[PCT_CHANGE] > 0)
+				formatString: #,##0
+				displayFolder: Q3 - Momentum
+				lineageTag: m303-mom-positive-hours
+
+			/// Counts hours with negative price change. Indicates bearish pressure persistence.
+			measure 'Negative Momentum Hours' = CALCULATE(COUNTROWS(fct_stock_ohlcv_hourly), fct_stock_ohlcv_hourly[PCT_CHANGE] < 0)
+				formatString: #,##0
+				displayFolder: Q3 - Momentum
+				lineageTag: m304-mom-negative-hours
+
+			/// Percentage of hours with positive price change. Higher values indicate upward momentum.
+			measure 'Momentum Win Rate' = DIVIDE([Positive Momentum Hours], [Hourly Periods], 0)
+				formatString: 0.0%
+				displayFolder: Q3 - Momentum
+				lineageTag: m305-mom-win-rate
+
+			/// Returns the largest single-hour percentage gain. Identifies peak bullish moves.
+			measure 'Max Hourly Gain' = MAX(fct_stock_ohlcv_hourly[PCT_CHANGE])
+				formatString: 0.00%
+				displayFolder: Q3 - Momentum
+				lineageTag: m306-mom-max-gain
+
+			/// Returns the largest single-hour percentage loss. Identifies peak bearish moves.
+			measure 'Max Hourly Loss' = MIN(fct_stock_ohlcv_hourly[PCT_CHANGE])
+				formatString: 0.00%
+				displayFolder: Q3 - Momentum
+				lineageTag: m307-mom-max-loss
+
+			/// Averages hourly trading volume. Baseline for identifying volume spikes.
+			measure 'Avg Hourly Volume' = AVERAGE(fct_stock_ohlcv_hourly[TOTAL_VOLUME])
+				formatString: #,##0
+				displayFolder: Q4 - Volume Analysis
+				lineageTag: m401-vol-avg-hourly
+
+			/// Returns the maximum hourly volume. Identifies peak trading activity.
+			measure 'Max Hourly Volume' = MAX(fct_stock_ohlcv_hourly[TOTAL_VOLUME])
+				formatString: #,##0
+				displayFolder: Q4 - Volume Analysis
+				lineageTag: m402-vol-max-hourly
+
+			/// Sums total volume across all hourly periods in the filtered context.
+			measure 'Total Hourly Volume' = SUM(fct_stock_ohlcv_hourly[TOTAL_VOLUME])
+				formatString: #,##0
+				displayFolder: Q4 - Volume Analysis
+				lineageTag: m403-vol-total-hourly
+
+			/// Averages the number of trades per hour. Higher counts indicate active participation.
+			measure 'Avg Trade Count' = AVERAGE(fct_stock_ohlcv_hourly[TRADE_COUNT])
+				formatString: #,##0
+				displayFolder: Q4 - Volume Analysis
+				lineageTag: m404-vol-avg-trade-count
+
+			/// Ratio of current volume to average volume. Values > 1.5 indicate volume spikes.
+			measure 'Volume vs Avg Ratio' =
+					VAR CurrentVolume = SUM(fct_stock_ohlcv_hourly[TOTAL_VOLUME])
+					VAR AvgVolume = CALCULATE(AVERAGE(fct_stock_ohlcv_hourly[TOTAL_VOLUME]), ALLSELECTED(fct_stock_ohlcv_hourly[TRADED_DATE]), ALLSELECTED(fct_stock_ohlcv_hourly[TRADED_HOUR]))
+					RETURN DIVIDE(CurrentVolume, AvgVolume, 0)
+				formatString: 0.00
+				displayFolder: Q4 - Volume Analysis
+				lineageTag: c3516f0b-4937-4706-b0b2-f30eaae02789
+
+			/// Flags periods where volume exceeds 1.5x the average as Spike, otherwise Normal.
+			measure 'Volume Spike Flag' = IF([Volume vs Avg Ratio] > 1.5, "Spike", "Normal")
+				displayFolder: Q4 - Volume Analysis
+				lineageTag: m406-vol-spike-flag
+
+			/// Average shares per trade. Higher values indicate institutional block trades.
+			measure 'Avg Volume per Trade' = DIVIDE(SUM(fct_stock_ohlcv_hourly[TOTAL_VOLUME]), SUM(fct_stock_ohlcv_hourly[TRADE_COUNT]), 0)
+				formatString: #,##0
+				displayFolder: Q4 - Volume Analysis
+				lineageTag: m407-vol-per-trade
+
+			/// Calculates hourly return as (close - open) / open. Used for correlation analysis.
+			measure 'Hourly Return' =
+					VAR CurrentClose = AVERAGE(fct_stock_ohlcv_hourly[CLOSE_PRICE])
+					VAR PriorClose = AVERAGE(fct_stock_ohlcv_hourly[OPEN_PRICE])
+					RETURN DIVIDE(CurrentClose - PriorClose, PriorClose, 0)
+				formatString: 0.00%
+				displayFolder: Q5 - Correlation
+				lineageTag: 13d6c624-6281-4bc3-bae9-36fb607421d4
+
+			/// Calculates variance of hourly returns. Higher variance indicates less predictable movements.
+			measure 'Return Variance' =
+					VAR AvgReturn = [Avg Price Change %]
+					RETURN AVERAGEX(fct_stock_ohlcv_hourly, POWER(fct_stock_ohlcv_hourly[PCT_CHANGE] - AvgReturn, 2))
+				formatString: 0.0000
+				displayFolder: Q5 - Correlation
+				lineageTag: m502-corr-variance
+
+			/// Standard deviation of hourly returns. Measures return dispersion.
+			measure 'Return Std Dev' = SQRT([Return Variance])
+				formatString: 0.00%
+				displayFolder: Q5 - Correlation
+				lineageTag: m503-corr-stddev
+
+			/// Risk-adjusted return ratio (return / volatility). Higher values indicate better risk-reward.
+			measure 'Sharpe-like Ratio' = DIVIDE([Avg Price Change %], [Return Std Dev], 0)
+				formatString: 0.00
+				displayFolder: Q5 - Correlation
+				lineageTag: m504-corr-sharpe
+
+			/// Averages hourly opening prices in the filtered context.
+			measure 'Avg Open Price' = ```
+					
+					AVERAGE(fct_stock_ohlcv_hourly[OPEN_PRICE])
+					    
+					```
+				formatString: $#,##0.00
+				displayFolder: OHLCV Metrics
+				lineageTag: m601-ohlcv-avg-open
+
+			/// Averages hourly high prices in the filtered context.
+			measure 'Avg High Price' = AVERAGE(fct_stock_ohlcv_hourly[HIGH_PRICE])
+				formatString: $#,##0.00
+				displayFolder: OHLCV Metrics
+				lineageTag: m602-ohlcv-avg-high
+
+			/// Averages hourly low prices in the filtered context.
+			measure 'Avg Low Price' = AVERAGE(fct_stock_ohlcv_hourly[LOW_PRICE])
+				formatString: $#,##0.00
+				displayFolder: OHLCV Metrics
+				lineageTag: m603-ohlcv-avg-low
+
+			/// Returns the most recent closing price. Useful for current price cards.
+			measure 'Latest Close Price' = CALCULATE(LASTNONBLANK(fct_stock_ohlcv_hourly[CLOSE_PRICE], 1), LASTNONBLANK(fct_stock_ohlcv_hourly[TRADED_DATE], 1))
+				formatString: $#,##0.00
+				displayFolder: OHLCV Metrics
+				lineageTag: m604-ohlcv-latest-close
+
+			measure Change = ```
+					
+					VAR __close = [Latest Close Price] 
+					VAR __open = [Avg Open Price]
+					VAR __change = __close - __open
+					VAR __changePercent = DIVIDE(__change, __close)
+					VAR __trendingUp = [SVG Trending Up]
+					VAR __trendingDown = [SVG Trending Down]
+					RETURN
+					SWITCH(
+					    TRUE(),
+					    __change >= 0, __trendingUp & " " & FORMAT(__change, "+0.00") & " " & "(" & FORMAT(__changePercent, "+0.00%") & ")",
+					    __change < 0, __trendingDown & " " & FORMAT(__change, "-0.00") & " " & "(" & FORMAT(__changePercent, "-0.00%") & ")"
+					)
+					
+					```
+				displayFolder: OHLCV Metrics
+				lineageTag: f414d49f-2334-4240-a3eb-58bc164a93df
+				dataCategory: ImageUrl
+
+			measure 'SVG Trending Up' = ```
+					
+					"data:image/svg+xml;utf8,
+					<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23aacc66' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>
+					    <polyline points='22 7 13.5 15.5 8.5 10.5 2 17'></polyline>
+					    <polyline points='16 7 22 7 22 13'></polyline>
+					</svg>"
+					
+					```
+				displayFolder: OHLCV Metrics
+				lineageTag: a3227dde-f02f-46a8-8258-d99534293426
+				dataCategory: ImageUrl
+
+			measure 'SVG Trending Down' = ```
+					
+					"data:image/svg+xml;utf8,
+					<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FF6600' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>
+					    <polyline points='22 17 13.5 8.5 8.5 13.5 2 7'></polyline>
+					    <polyline points='16 17 22 17 22 11'></polyline>
+					</svg>"
+					
+					```
+				displayFolder: OHLCV Metrics
+				lineageTag: 872afbf3-f961-420e-9a53-e418e158772c
+				dataCategory: ImageUrl
+
+			measure 'Change SVG' = ```
+					
+					VAR __close = [Latest Close Price] 
+					VAR __open = [Avg Open Price]
+					VAR __change = __close - __open
+					VAR __changePercent = DIVIDE(__change, __open)
+					
+					// Formatting
+					VAR __green = "#aacc66"
+					VAR __red = "#FF6600"
+					VAR __color = IF(__change >= 0, __green, __red)
+					
+					VAR __valText = FORMAT(__change, "+0.00;-0.00")
+					VAR __pctText = "(" & FORMAT(__changePercent, "+0.0%;-0.0%") & ")"
+					
+					// THE FIX: We use a massive viewBox width (300) compared to height (36).
+					// This forces the SVG to stretch horizontally within the cell.
+					RETURN
+					"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40'>
+					    <g transform='translate(5, 5)' stroke='" & __color & "' stroke-width='2.5' fill='none'>
+					        " & IF(__change >= 0, 
+					            "<polyline points='18 7 11 14 7 10 2 15'></polyline><polyline points='13 7 18 7 18 12'></polyline>", 
+					            "<polyline points='18 15 11 8 7 12 2 7'></polyline><polyline points='13 15 18 15 18 10'></polyline>"
+					        ) & "
+					    </g>
+					    <text x='35' y='16' fill='" & __color & "' font-family='Segoe UI, Arial' font-size='18' font-weight='semi-bold'>" & __valText & "</text>
+					    <text x='35' y='32' fill='" & __color & "' font-family='Segoe UI, Arial' font-size='14'>" & __pctText & "</text>
+					</svg>"
+					
+					```
+				displayFolder: OHLCV Metrics
+				lineageTag: 89e0dc1b-bf2a-4ec9-897c-f35c32866e6b
+				dataCategory: ImageUrl
+
+			measure 'As of Date' = ```
+					
+					VAR _MaxFactDate =
+					    CALCULATE(
+					        MAX(fct_stock_ohlcv_hourly[TRADED_DATE])
+					    )
+					VAR _SelectedDate =
+					    IF(
+					        HASONEVALUE('Disconnected Date'[DATE]),
+					        SELECTEDVALUE('Disconnected Date'[DATE])
+					    )
+					RETURN
+					COALESCE(_SelectedDate, _MaxFactDate)
+					
+					```
+				formatString: Short Date
+				displayFolder: Dynamic Period Filter
+				lineageTag: a21be7c0-e459-46dc-b9e5-c33b781ee871
+
+			measure 'Period Interval (Days)' =
+					
+					VAR _Period = SELECTEDVALUE('Period Filter'[Period])
+					RETURN
+					SWITCH(
+					    _Period,
+					    "1D", 1,
+					    "5D", 5,
+					    "1M", 30,
+					    "6M", 180,
+					    "1Y", 365,
+					    "5Y", 1825,
+					    BLANK()   -- YTD and All fall here
+					)
+				formatString: 0
+				displayFolder: Dynamic Period Filter
+				lineageTag: a24efce7-79d0-4c6e-8a6a-04c2a615bdbf
+
+			measure 'Dynamic Date Window' =
+					
+					VAR _AsOf = [As of Date]
+					VAR _Interval = [Period Interval (Days)]
+					VAR _Period = SELECTEDVALUE('Period Filter'[Period])
+					
+					VAR _EarliestSymbolDate =
+					    CALCULATE(
+					        MIN(fct_stock_ohlcv_hourly[TRADED_DATE]),
+					        ALL(fct_stock_ohlcv_hourly),
+					        VALUES(fct_stock_ohlcv_hourly[SYMBOL])
+					    )
+					
+					RETURN
+					SWITCH(
+					    TRUE(),
+					
+					    NOT ISBLANK(_Interval),
+					        CALCULATETABLE(
+					            DATESINPERIOD(
+					                fct_stock_ohlcv_hourly[TRADED_DATE],
+					                _AsOf,
+					                -_Interval,
+					                DAY
+					            )
+					        ),
+					
+					    _Period = "YTD",
+					        CALCULATETABLE(
+					            DATESYTD(
+					                fct_stock_ohlcv_hourly[TRADED_DATE],
+					                "12/31"
+					            )
+					        ),
+					
+					    _Period = "All",
+					        CALCULATETABLE(
+					            DATESBETWEEN(
+					                fct_stock_ohlcv_hourly[TRADED_DATE],
+					                _EarliestSymbolDate,
+					                _AsOf
+					            )
+					        ),
+					
+					    CALCULATETABLE(
+					        FILTER(
+					            VALUES(fct_stock_ohlcv_hourly[TRADED_DATE]),
+					            FALSE()
+					        )
+					    )
+					)
+				formatString: Short Date
+				displayFolder: Dynamic Period Filter
+				lineageTag: 8e16be76-d317-456f-8170-8c3663cb0cc9
+
+			measure 'Dates Range' =
+					
+					VAR __SelectedCalItem = SELECTEDVALUE('Period Window'[Period])
+					
+					VAR _MinDate =
+					    CALCULATE(
+					        MIN(fct_stock_ohlcv_hourly[TRADED_DATE])
+					    )
+					
+					VAR _MaxDate =
+					    CALCULATE(
+					        MAX(fct_stock_ohlcv_hourly[TRADED_DATE])
+					    )
+					
+					RETURN
+					// SWITCH(
+					//     TRUE(),
+					//     __SelectedCalItem = "1D",
+					        FORMAT(_MinDate, "MM-dd-yyyy") & " to " & FORMAT(_MaxDate, "MM-dd-yyyy")
+					
+					//     __SelectedCalItem = "5D",
+					//         FORMAT(_MinDate, "MM-dd-yyyy") & " to " & FORMAT(_MaxDate, "MM-dd-yyyy"),
+					
+					//     __SelectedCalItem = "1M",
+					//         FORMAT(_MinDate, "MM-dd-yyyy") & " to " & FORMAT(_MaxDate, "MM-dd-yyyy"),
+					
+					//     __SelectedCalItem = "6M",
+					//         FORMAT(_MinDate, "MM-dd-yyyy") & " to " & FORMAT(_MaxDate, "MM-dd-yyyy"),
+					
+					//     __SelectedCalItem = "1Y",
+					//         FORMAT(_MinDate, "MM-dd-yyyy") & " to " & FORMAT(_MaxDate, "MM-dd-yyyy"),
+					
+					//     __SelectedCalItem = "5Y",
+					//         FORMAT(_MinDate, "MM-dd-yyyy") & " to " & FORMAT(_MaxDate, "MM-dd-yyyy"),
+					
+					//     __SelectedCalItem = "YTD",
+					//         FORMAT(_MinDate, "MM-dd-yyyy") & " to " & FORMAT(_MaxDate, "MM-dd-yyyy"),
+					
+					//     __SelectedCalItem = "All",
+					//         FORMAT(_MinDate, "MM-dd-yyyy") & " to " & FORMAT(_MaxDate, "MM-dd-yyyy"),
+					
+					//     "No Period Selected"
+					// )
+				displayFolder: Dynamic Period Filter
+				lineageTag: 8970ed2f-471e-408a-99dd-80731758fdd3
+
+			partition Metrics = m
+				mode: import
+				source =
+						let
+							Table = #table(type table [], {})
+						in
+							Table
+
+			annotation PBI_ResultType = Table
+
+			annotation PBI_NavigationStepName = Navigation
+
+		table 'Period Filter'
+			lineageTag: 32f852bc-7a90-42c9-8db0-c896803c6715
+
+			column Period
+				lineageTag: 0b2df8ba-73b5-4761-8bd9-87f37700edb3
+				summarizeBy: none
+				isNameInferred
+				sourceColumn: [Period]
+				sortByColumn: Sort
+
+				annotation SummarizationSetBy = Automatic
+
+			column Sort
+				formatString: 0
+				lineageTag: 8234a76f-f7db-40cc-b00c-5a260c4832dc
+				summarizeBy: sum
+				isNameInferred
+				sourceColumn: [Sort]
+
+				annotation SummarizationSetBy = Automatic
+
+			column CalItemName = ```
+					
+					SWITCH(
+					    'Period Filter'[Period],
+					    "1D", "Fixed Days",
+					    "5D", "Fixed Days",
+					    "1M", "Fixed Days",
+					    "6M", "Fixed Days",
+					    "1Y", "Fixed Days",
+					    "5Y", "Fixed Days",
+					    "YTD", "YTD",
+					    "All", "All"
+					)
+					
+					```
+				lineageTag: e8a6ecdf-cd6e-421b-80d6-2e0ae2574074
+				summarizeBy: none
+
+				annotation SummarizationSetBy = Automatic
+
+			partition 'Period Filter' = calculated
+				mode: import
+				source = ```
+						
+						DATATABLE (
+						    "Period", STRING, 
+						    "Sort", INTEGER,
+						    {
+						        {"1D", 1},
+						        {"5D", 2},
+						        {"1M", 3},
+						        {"6M", 4},
+						        {"YTD", 5},
+						        {"1Y", 6},
+						        {"5Y", 7},
+						        {"All", 8}
+						    }
+						)
+						```
+
+			annotation PBI_Id = 56aedf405a9d4f59af7fb7b8e4fc0804
+
+		table 'Disconnected Date'
+			lineageTag: e0e524a1-9266-4385-8b12-2c6c3e156585
+
+			column DATE
+				formatString: Short Date
+				lineageTag: c569e93b-5669-496f-a226-b6b8c185c0a2
+				summarizeBy: none
+				isNameInferred
+				sourceColumn: dim_date[DATE]
+				columnOrigin: dim_date.DATE
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation UnderlyingDateTimeDataType = Date
+
+			column MONTH
+				lineageTag: bc3d6965-8391-448e-8102-241de0dd3395
+				summarizeBy: sum
+				isNameInferred
+				sourceColumn: dim_date[MONTH]
+				columnOrigin: dim_date.MONTH
+
+				annotation SummarizationSetBy = Automatic
+
+				annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+			column MONTH_YEAR
+				lineageTag: dc49f9e8-dcfb-40a1-a5aa-800297322754
+				summarizeBy: none
+				isNameInferred
+				sourceColumn: dim_date[MONTH_YEAR]
+				sortByColumn: MONTH
+				columnOrigin: dim_date.MONTH_YEAR
+
+				annotation SummarizationSetBy = Automatic
+
+			column YEAR
+				formatString: 0
+				lineageTag: 125c32cc-0e51-4d12-97b5-d405679537d6
+				summarizeBy: sum
+				isNameInferred
+				sourceColumn: dim_date[YEAR]
+				columnOrigin: dim_date.YEAR
+
+				annotation SummarizationSetBy = Automatic
+
+			partition 'Disconnected Date' = calculated
+				mode: import
+				source = ```
+						
+						VAR __Table = ALL(dim_date[DATE], dim_date[YEAR], dim_date[MONTH], dim_date[MONTH_YEAR])
+						RETURN
+						__Table
+						    // ADDCOLUMNS(
+						    //     __Table,
+						    //     "Month", FORMAT([DATE], "mmm-yy")
+						    // )
+						    
+						```
+
+			annotation PBI_Id = a593b390db8b453799ac12215a20c0ca
+
+		table 'Period Window'
+			lineageTag: b56c1d0f-11ba-41c8-98e9-821ecb838d21
+
+			calculationGroup
+
+				calculationItem 1D = ```
+						
+						VAR __Interval = 1
+						VAR __CutOff = [As of Date]
+						
+						RETURN
+						CALCULATE(
+						    SELECTEDMEASURE(),
+						    DATESINPERIOD(
+						        fct_stock_ohlcv_hourly[TRADED_DATE],
+						        __Cutoff,
+						        __Interval,
+						        DAY
+						    )
+						)
+						
+						
+						```
+
+				calculationItem 5D =
+						
+						VAR __Interval = 5
+						VAR __CutOff = [As of Date]
+						
+						RETURN
+						CALCULATE(
+						    SELECTEDMEASURE(),
+						    DATESINPERIOD(
+						        fct_stock_ohlcv_hourly[TRADED_DATE],
+						        __Cutoff,
+						        __Interval,
+						        DAY
+						    )
+						)
+
+				calculationItem 1M =
+						
+						VAR __Interval = 30
+						VAR __CutOff = [As of Date]
+						
+						RETURN
+						CALCULATE(
+						    SELECTEDMEASURE(),
+						    DATESINPERIOD(
+						        fct_stock_ohlcv_hourly[TRADED_DATE],
+						        __Cutoff,
+						        __Interval,
+						        DAY
+						    )
+						)
+
+				calculationItem 6M =
+						
+						VAR __Interval = 180
+						VAR __CutOff = [As of Date]
+						
+						RETURN
+						CALCULATE(
+						    SELECTEDMEASURE(),
+						    DATESINPERIOD(
+						        fct_stock_ohlcv_hourly[TRADED_DATE],
+						        __Cutoff,
+						        __Interval,
+						        DAY
+						    )
+						)
+
+				calculationItem YTD = ```
+						
+						CALCULATE(
+						    SELECTEDMEASURE(),
+						    DATESYTD(
+						        fct_stock_ohlcv_hourly[TRADED_DATE], 
+						        "12/31"
+						    )
+						)
+						
+						
+						```
+
+				calculationItem 1Y =
+						
+						VAR __Interval = 365
+						VAR __CutOff = [As of Date]
+						
+						RETURN
+						CALCULATE(
+						    SELECTEDMEASURE(),
+						    DATESINPERIOD(
+						        fct_stock_ohlcv_hourly[TRADED_DATE],
+						        __Cutoff,
+						        __Interval,
+						        DAY
+						    )
+						)
+
+				calculationItem 5Y = ```
+						
+						VAR __Interval = 1825
+						VAR __CutOff = [As of Date]
+						
+						RETURN
+						CALCULATE(
+						    SELECTEDMEASURE(),
+						    DATESINPERIOD(
+						        fct_stock_ohlcv_hourly[TRADED_DATE],
+						        __Cutoff,
+						        __Interval,
+						        DAY
+						    )
+						)
+						
+						```
+
+				calculationItem All = ```
+						
+						VAR __Cutoff = [As of Date]
+						
+						VAR __EarliestSymbolDate =
+						    CALCULATE(
+						        MIN(fct_stock_ohlcv_hourly[TRADED_DATE]),
+						        ALL(fct_stock_ohlcv_hourly),
+						        VALUES(fct_stock_ohlcv_hourly[SYMBOL])
+						    )
+						
+						RETURN
+						CALCULATE(
+						    SELECTEDMEASURE(),
+						    DATESBETWEEN(
+						        fct_stock_ohlcv_hourly[TRADED_DATE], 
+						        __EarliestSymbolDate,
+						        __Cutoff
+						    )
+						)
+						
+						```
+
+			column Period
+				dataType: string
+				lineageTag: 7351be3a-60df-4ab2-9a95-cc4441f93ecf
+				summarizeBy: none
+				sourceColumn: Name
+				sortByColumn: Ordinal
+
+				annotation SummarizationSetBy = Automatic
+
+			column Ordinal
+				dataType: int64
+				formatString: 0
+				lineageTag: 938db400-8070-42a7-a009-8a6eabc50d09
+				summarizeBy: sum
+				sourceColumn: Ordinal
+
+				annotation SummarizationSetBy = Automatic
+
+		relationship AutoDetected_ad658e29-4159-4992-b74f-45f4007304ca
+			fromColumn: fct_stock_ohlcv_hourly.DATE_KEY
+			toColumn: dim_date.DATE_KEY
+
+		relationship AutoDetected_989d1a09-45f8-414b-b7c7-73eb90a8338b
+			fromColumn: fct_stock_trades.DATE_KEY
+			toColumn: dim_date.DATE_KEY
+
+		relationship 002507eb-f3ab-4b4a-f75d-5059dc7aefc2
+			fromColumn: fct_stock_ohlcv_hourly.SYMBOL
+			toColumn: dim_companies.SYMBOL
+
+		relationship e442524b-bd36-1409-9617-2c06c6a50f5c
+			fromColumn: fct_stock_trades.SYMBOL
+			toColumn: dim_companies.SYMBOL
+
+		cultureInfo en-US
+
+			linguisticMetadata = {"Version":"4.1.0","Language":"en-US","Entities":{"dim_company":{"Definition":{"Binding":{"ConceptualEntity":"dim_companies"}},"State":"Generated","Terms":[{"dim company":{"State":"Generated"}},{"dim_companies":{"Type":"Noun","State":"Generated","Weight":0.99}},{"company":{"State":"Generated","Weight":0.97}},{"dim co":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.75}},{"dim corp":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.75}},{"dim corporation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.75}},{"dim corps":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.75}},{"dim employer":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.75}},{"dim enterprise":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.75}},{"co":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.736}},{"corp":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.736}},{"corporation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.736}},{"corps":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.736}}]},"dim_company.symbol":{"Definition":{"Binding":{"ConceptualEntity":"dim_companies","ConceptualProperty":"SYMBOL"}},"State":"Generated","Terms":[{"symbol":{"State":"Generated"}},{"representation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"icon":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"pictogram":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"sign":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"character":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"figure":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"mark":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"emblem":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.466}},{"indication":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.466}},{"logo":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.466}}]},"dim_company.company_name":{"Definition":{"Binding":{"ConceptualEntity":"dim_companies","ConceptualProperty":"COMPANY_NAME"}},"State":"Generated","Terms":[{"company name":{"State":"Generated"}},{"name":{"State":"Generated","Weight":0.97}},{"COMPANY_NAME":{"Type":"Noun","State":"Generated","Weight":0.99}},{"company":{"State":"Generated","Weight":0.97}},{"co":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.736}},{"corp":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.736}},{"corporation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.736}},{"corps":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.736}},{"employer":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.736}},{"enterprise":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.736}},{"company nickname":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.727}},{"company title":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.727}},{"company label":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.727}},{"company tag":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.727}}],"NameType":"Name"},"dim_company.exchange":{"Definition":{"Binding":{"ConceptualEntity":"dim_companies","ConceptualProperty":"EXCHANGE"}},"State":"Generated","Terms":[{"exchange":{"State":"Generated"}},{"conversation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"argument":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"discussion":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"altercation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"talk":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"chat":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"interchange":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"give-and-take":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"trade":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.452}},{"swap":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.452}}]},"dim_company.logo_url":{"Definition":{"Binding":{"ConceptualEntity":"dim_companies","ConceptualProperty":"LOGO_URL"}},"State":"Generated","Terms":[{"logo url":{"State":"Generated"}},{"LOGO_URL":{"Type":"Noun","State":"Generated","Weight":0.99}},{"url":{"State":"Generated","Weight":0.97}},{"logo website":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.75}},{"website":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.736}},{"logo site":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.727}},{"site":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.714}},{"logo web address":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.589}},{"web address":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.571}}]},"fct_stock_ohlcv_hourly":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"}},"State":"Generated","Terms":[{"fct stock ohlcv hourly":{"State":"Generated"}},{"fct_stock_ohlcv_hourly":{"Type":"Noun","State":"Generated","Weight":0.99}},{"fct inventory ohlcv hourly":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.599}}]},"fct_stock_ohlcv_hourly.symbol":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly","ConceptualProperty":"SYMBOL"}},"State":"Generated","Visibility":{"Value":"Hidden"},"Terms":[{"symbol":{"State":"Generated"}},{"representation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"icon":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"pictogram":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"sign":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"character":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"figure":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"mark":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"emblem":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.466}},{"indication":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.466}},{"logo":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.466}}]},"fct_stock_ohlcv_hourly.open_price":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly","ConceptualProperty":"OPEN_PRICE"}},"State":"Generated","Terms":[{"open price":{"State":"Generated"}},{"OPEN_PRICE":{"Type":"Noun","State":"Generated","Weight":0.99}},{"open value":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"open worth":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"open fee":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"open charge":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"open amount":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"open bill":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"open rate":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"open expense":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"open cost":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"open outlay":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}}]},"fct_stock_ohlcv_hourly.high_price":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly","ConceptualProperty":"HIGH_PRICE"}},"State":"Generated","Terms":[{"high price":{"State":"Generated"}},{"HIGH_PRICE":{"Type":"Noun","State":"Generated","Weight":0.99}},{"high value":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"high worth":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"high fee":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"high charge":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"high amount":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"high bill":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"high rate":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"high expense":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"high cost":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"high outlay":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}}]},"fct_stock_ohlcv_hourly.low_price":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly","ConceptualProperty":"LOW_PRICE"}},"State":"Generated","Terms":[{"low price":{"State":"Generated"}},{"LOW_PRICE":{"Type":"Noun","State":"Generated","Weight":0.99}},{"low value":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"low worth":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"low fee":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"low charge":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"low amount":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"low bill":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"low rate":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"low expense":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"low cost":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"low outlay":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}}]},"fct_stock_ohlcv_hourly.close_price":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly","ConceptualProperty":"CLOSE_PRICE"}},"State":"Generated","Terms":[{"close price":{"State":"Generated"}},{"CLOSE_PRICE":{"Type":"Noun","State":"Generated","Weight":0.99}},{"close value":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"close worth":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"close fee":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"close charge":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"close amount":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"close bill":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"close rate":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"close expense":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"close cost":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"close outlay":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}}]},"fct_stock_ohlcv_hourly.total_volume":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly","ConceptualProperty":"TOTAL_VOLUME"}},"State":"Generated","Terms":[{"total volume":{"State":"Generated"}},{"TOTAL_VOLUME":{"Type":"Noun","State":"Generated","Weight":0.99}},{"aggregate volume":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.582}},{"overall volume":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.582}},{"total capacity":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"total size":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"total bulk":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"total tome":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}},{"total book":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.461}},{"total work":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.461}},{"total edition":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.451}}]},"fct_stock_ohlcv_hourly.trade_count":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly","ConceptualProperty":"TRADE_COUNT"}},"State":"Generated","Terms":[{"trade count":{"State":"Generated"}},{"TRADE_COUNT":{"Type":"Noun","State":"Generated","Weight":0.99}},{"trade amount":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.727}}]},"fct_stock_ohlcv_hourly.vwap":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly","ConceptualProperty":"VWAP"}},"State":"Generated","Terms":[{"vwap":{"State":"Generated"}}]},"fct_stock_ohlcv_hourly.stddev_price":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly","ConceptualProperty":"STDDEV_PRICE"}},"State":"Generated","Terms":[{"stddev price":{"State":"Generated"}},{"STDDEV_PRICE":{"Type":"Noun","State":"Generated","Weight":0.99}},{"stddev value":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"stddev worth":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"stddev fee":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"stddev charge":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"stddev amount":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"stddev bill":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"stddev rate":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"stddev expense":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"stddev cost":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"stddev outlay":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}}]},"fct_stock_ohlcv_hourly.price_range":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly","ConceptualProperty":"PRICE_RANGE"}},"State":"Generated","Terms":[{"price range":{"State":"Generated"}},{"PRICE_RANGE":{"Type":"Noun","State":"Generated","Weight":0.99}},{"price variety":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"price series":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"price assortment":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"price collection":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"price gamut":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"price selection":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"price choice":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"price array":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"price kind":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"price sort":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}}]},"fct_stock_ohlcv_hourly.pct_change":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly","ConceptualProperty":"PCT_CHANGE"}},"State":"Generated","Terms":[{"pct change":{"State":"Generated"}},{"PCT_CHANGE":{"Type":"Noun","State":"Generated","Weight":0.99}},{"pct alteration":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"pct modification":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"pct variation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"pct transformation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"pct revolution":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"pct conversion":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"pct adjustment":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"pct amendment":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"pct difference":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"pct cash":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.461}}]},"fct_stock_ohlcv_hourly.traded_date":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly","ConceptualProperty":"TRADED_DATE"}},"State":"Generated","Terms":[{"traded date":{"State":"Generated"}},{"TRADED_DATE":{"Type":"Noun","State":"Generated","Weight":0.99}},{"date":{"State":"Generated","Weight":0.7}},{"traded moment":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.75}},{"traded period":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.727}}],"SemanticType":"Time"},"fct_stock_ohlcv_hourly.traded_hour":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly","ConceptualProperty":"TRADED_HOUR"}},"State":"Generated","Terms":[{"traded hour":{"State":"Generated"}},{"TRADED_HOUR":{"Type":"Noun","State":"Generated","Weight":0.99}},{"time":{"State":"Generated","Weight":0.7}},{"traded period":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"traded era":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}},{"traded epoch":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}},{"traded age":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.461}}],"SemanticType":"Time"},"fct_stock_ohlcv_hourly.date_key":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly","ConceptualProperty":"DATE_KEY"}},"State":"Generated","Visibility":{"Value":"Hidden"},"Terms":[{"date key":{"State":"Generated"}},{"DATE_KEY":{"Type":"Noun","State":"Generated","Weight":0.99}},{"key":{"State":"Generated","Weight":0.97}},{"moment key":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.6}},{"period key":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.582}},{"main":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"basic":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"fundamental":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"central":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"major":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"keynote":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"essential":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"date solution":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}}]},"fct_stock_trade":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_trades"}},"State":"Generated","Terms":[{"fct stock trade":{"State":"Generated"}},{"fct_stock_trades":{"Type":"Noun","State":"Generated","Weight":0.99}},{"fct inventory trade":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.591}},{"fct stock skill":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"fct stock occupation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"fct stock profession":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"fct stock vocation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"fct stock job":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"fct stock employment":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"fct stock craft":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"fct stock commerce":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.482}},{"fct stock industry":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.482}}]},"fct_stock_trade.symbol":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_trades","ConceptualProperty":"SYMBOL"}},"State":"Generated","Visibility":{"Value":"Hidden"},"Terms":[{"symbol":{"State":"Generated"}},{"representation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"icon":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"pictogram":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"sign":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"character":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"figure":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"mark":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"emblem":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.466}},{"indication":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.466}},{"logo":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.466}}]},"fct_stock_trade.price":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_trades","ConceptualProperty":"PRICE"}},"State":"Generated","Terms":[{"price":{"State":"Generated"}},{"worth":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"fee":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"charge":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"bill":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"expense":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"cost":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"outlay":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"penalty":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.466}},{"punishment":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.466}},{"fine":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.452}}]},"fct_stock_trade.volume":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_trades","ConceptualProperty":"VOLUME"}},"State":"Generated","Terms":[{"volume":{"State":"Generated"}},{"capacity":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"size":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"bulk":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"tome":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.466}},{"book":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.452}},{"work":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.452}}]},"fct_stock_trade.trade_value_usd":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_trades","ConceptualProperty":"TRADE_VALUE_USD"}},"State":"Generated","Terms":[{"trade value usd":{"State":"Generated"}},{"TRADE_VALUE_USD":{"Type":"Noun","State":"Generated","Weight":0.99}},{"usd":{"State":"Generated","Weight":0.97}},{"value usd":{"State":"Generated","Weight":0.97}}]},"fct_stock_trade.traded_at":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_trades","ConceptualProperty":"TRADED_AT"}},"State":"Generated","Terms":[{"traded at":{"State":"Generated"}},{"TRADED_AT":{"Type":"Noun","State":"Generated","Weight":0.99}},{"date":{"State":"Generated","Weight":0.7}}],"SemanticType":"Time"},"fct_stock_trade.traded_hour":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_trades","ConceptualProperty":"TRADED_HOUR"}},"State":"Generated","Terms":[{"traded hour":{"State":"Generated"}},{"TRADED_HOUR":{"Type":"Noun","State":"Generated","Weight":0.99}},{"time":{"State":"Generated","Weight":0.7}},{"traded period":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"traded era":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}},{"traded epoch":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}},{"traded age":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.461}}],"SemanticType":"Time"},"fct_stock_trade.traded_date":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_trades","ConceptualProperty":"TRADED_DATE"}},"State":"Generated","Terms":[{"traded date":{"State":"Generated"}},{"TRADED_DATE":{"Type":"Noun","State":"Generated","Weight":0.99}},{"date":{"State":"Generated","Weight":0.7}},{"traded moment":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.75}},{"traded period":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.727}}],"SemanticType":"Time"},"fct_stock_trade.date_key":{"Definition":{"Binding":{"ConceptualEntity":"fct_stock_trades","ConceptualProperty":"DATE_KEY"}},"State":"Generated","Visibility":{"Value":"Hidden"},"Terms":[{"date key":{"State":"Generated"}},{"DATE_KEY":{"Type":"Noun","State":"Generated","Weight":0.99}},{"key":{"State":"Generated","Weight":0.97}},{"moment key":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.6}},{"period key":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.582}},{"main":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"basic":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"fundamental":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"central":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"major":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"keynote":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"essential":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"date solution":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}}]},"dim_date":{"Definition":{"Binding":{"ConceptualEntity":"dim_date"}},"State":"Generated","Terms":[{"dim date":{"State":"Generated"}},{"dim_date":{"Type":"Noun","State":"Generated","Weight":0.99}},{"dim moment":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.75}},{"dim period":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.727}}]},"dim_date.date_key":{"Definition":{"Binding":{"ConceptualEntity":"dim_date","ConceptualProperty":"DATE_KEY"}},"State":"Generated","Terms":[{"date key":{"State":"Generated"}},{"DATE_KEY":{"Type":"Noun","State":"Generated","Weight":0.99}},{"key":{"State":"Generated","Weight":0.97}},{"moment key":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.6}},{"period key":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.582}},{"main":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"basic":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"fundamental":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"central":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"major":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"keynote":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"essential":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"date solution":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}}]},"dim_date.date":{"Definition":{"Binding":{"ConceptualEntity":"dim_date","ConceptualProperty":"DATE"}},"State":"Generated","Terms":[{"date":{"State":"Generated"}},{"moment":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.736}},{"period":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.714}}],"SemanticType":"Time"},"dim_date.year":{"Definition":{"Binding":{"ConceptualEntity":"dim_date","ConceptualProperty":"YEAR"}},"State":"Generated","Terms":[{"year":{"State":"Generated"}},{"yr":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.736}}]},"dim_date.quarter":{"Definition":{"Binding":{"ConceptualEntity":"dim_date","ConceptualProperty":"QUARTER"}},"State":"Generated","Terms":[{"quarter":{"State":"Generated"}},{"qtr":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.818}}]},"dim_date.month":{"Definition":{"Binding":{"ConceptualEntity":"dim_date","ConceptualProperty":"MONTH"}},"State":"Generated","Terms":[{"month":{"State":"Generated"}},{"mth":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.736}}]},"dim_date.month_name":{"Definition":{"Binding":{"ConceptualEntity":"dim_date","ConceptualProperty":"MONTH_NAME"}},"State":"Generated","Terms":[{"month name":{"State":"Generated"}},{"MONTH_NAME":{"Type":"Noun","State":"Generated","Weight":0.99}},{"month nickname":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.727}},{"month title":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.727}},{"month label":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.727}},{"month tag":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.727}},{"mth name":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.6}}]},"dim_date.week_of_year":{"Definition":{"Binding":{"ConceptualEntity":"dim_date","ConceptualProperty":"WEEK_OF_YEAR"}},"State":"Generated","Terms":[{"week of year":{"State":"Generated"}},{"WEEK_OF_YEAR":{"Type":"Noun","State":"Generated","Weight":0.99}},{"week of yr":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.609}}]},"dim_date.day_of_month":{"Definition":{"Binding":{"ConceptualEntity":"dim_date","ConceptualProperty":"DAY_OF_MONTH"}},"State":"Generated","Terms":[{"day of month":{"State":"Generated"}},{"DAY_OF_MONTH":{"Type":"Noun","State":"Generated","Weight":0.99}},{"day of mth":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.609}}]},"dim_date.day_of_week":{"Definition":{"Binding":{"ConceptualEntity":"dim_date","ConceptualProperty":"DAY_OF_WEEK"}},"State":"Generated","Terms":[{"day of week":{"State":"Generated"}},{"DAY_OF_WEEK":{"Type":"Noun","State":"Generated","Weight":0.99}}]},"dim_date.day_name":{"Definition":{"Binding":{"ConceptualEntity":"dim_date","ConceptualProperty":"DAY_NAME"}},"State":"Generated","Terms":[{"day name":{"State":"Generated"}},{"DAY_NAME":{"Type":"Noun","State":"Generated","Weight":0.99}},{"day nickname":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.727}},{"day title":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.727}},{"day label":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.727}},{"day tag":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.727}}]},"dim_date.is_weekday":{"Definition":{"Binding":{"ConceptualEntity":"dim_date","ConceptualProperty":"IS_WEEKDAY"}},"State":"Generated","Terms":[{"is weekday":{"State":"Generated"}},{"IS_WEEKDAY":{"Type":"Noun","State":"Generated","Weight":0.99}},{"weekday":{"State":"Generated","Weight":0.97}},{"ordinary":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"standard":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"basic":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"routine":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}}]},"dim_date.is_trading_day":{"Definition":{"Binding":{"ConceptualEntity":"dim_date","ConceptualProperty":"IS_TRADING_DAY"}},"State":"Generated","Terms":[{"is trading day":{"State":"Generated"}},{"IS_TRADING_DAY":{"Type":"Noun","State":"Generated","Weight":0.99}},{"trading day":{"State":"Generated","Weight":0.97}}]},"metrics":{"Definition":{"Binding":{"ConceptualEntity":"Metrics"}},"State":"Generated","Terms":[{"metrics":{"State":"Generated"}}]},"metrics.total_trades":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Total Trades"}},"State":"Generated","Terms":[{"total trades":{"State":"Generated"}},{"trades":{"State":"Generated","Weight":0.97}},{"aggregate trade":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.582}},{"overall trade":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.582}},{"total skill":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"total occupation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"total profession":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"total vocation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"skill":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"occupation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"profession":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"vocation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}}]},"metrics.total_volume":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Total Volume"}},"State":"Generated","Terms":[{"total volume":{"State":"Generated"}},{"aggregate volume":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.582}},{"overall volume":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.582}},{"total capacity":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"total size":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"total bulk":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"total tome":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}},{"total book":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.461}},{"total work":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.461}},{"total edition":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.451}},{"Volume":{"State":"Suggested","Source":{"Type":"External","Agent":"PowerBI.VisualColumnRename"},"Weight":0.9}}]},"metrics.total_trade_value":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Total Trade Value"}},"State":"Generated","Terms":[{"total trade value":{"State":"Generated"}},{"value":{"State":"Generated","Weight":0.97}},{"trade value":{"State":"Generated","Weight":0.97}},{"aggregate trade value":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.591}},{"overall trade value":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.591}},{"total trade assessment":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"trade assessment":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"total trade worth":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"total trade price":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"total trade cost":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"total trade charge":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"total trade rate":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"assessment":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}}]},"metrics.average_price":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Average Price"}},"State":"Generated","Terms":[{"average price":{"State":"Generated"}},{"average value":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"average worth":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"average fee":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"average charge":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"average amount":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"average bill":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"average rate":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"average expense":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"average cost":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"average outlay":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}}]},"metrics.distinct_stocks":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Distinct Stocks"}},"State":"Generated","Terms":[{"distinct stocks":{"State":"Generated"}},{"stocks":{"State":"Generated","Weight":0.97}},{"distinct framework":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"framework":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"distinct pillory":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"pillory":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"distinct dividend":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}},{"dividend":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.466}},{"distinct share":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.461}},{"distinct bond":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.461}},{"share":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.452}},{"bond":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.452}}]},"metrics.trading_days":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Trading Days"}},"State":"Generated","Terms":[{"trading days":{"State":"Generated"}},{"trading existence":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"trading being":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"trading living":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"trading eras":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}},{"trading generation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}},{"trading epoch":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}},{"trading period":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.461}},{"trading age":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.461}}]},"metrics.hourly_periods":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Hourly Periods"}},"State":"Generated","Terms":[{"hourly periods":{"State":"Generated"}},{"periods":{"State":"Generated","Weight":0.97}},{"hourly eras":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"hourly epoch":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"eras":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"epoch":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"hourly age":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"hourly stage":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"hourly phase":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"age":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"stage":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"phase":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}}]},"metrics.avg_volatility_StdDev":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Avg Volatility (StdDev)"}},"State":"Generated","Terms":[{"avg volatility (StdDev)":{"State":"Generated"}},{"avg volatility":{"State":"Generated","Weight":0.75}},{"average volatility (stddev)":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.605}}]},"metrics.max_volatility_StdDev":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Max Volatility (StdDev)"}},"State":"Generated","Terms":[{"max volatility (StdDev)":{"State":"Generated"}},{"max volatility":{"State":"Generated","Weight":0.75}},{"maximum volatility (stddev)":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.605}}]},"metrics.avg_price_range":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Avg Price Range"}},"State":"Generated","Terms":[{"avg price range":{"State":"Generated"}},{"average price range":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.591}},{"avg price variety":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"avg price series":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"avg price assortment":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"avg price collection":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"avg price gamut":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"avg price selection":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"avg price choice":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg price array":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg price kind":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}}]},"metrics.max_price_range":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Max Price Range"}},"State":"Generated","Terms":[{"max price range":{"State":"Generated"}},{"maximum price range":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.591}},{"max price variety":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"max price series":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"max price assortment":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"max price collection":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"max price gamut":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"max price selection":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"max price choice":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"max price array":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"max price kind":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}}]},"metrics.price_range_":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Price Range %"}},"State":"Generated","Terms":[{"price range %":{"State":"Generated"}},{"price range percentage":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.762}},{"price range pct":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.739}}]},"metrics.avg_VWAP":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Avg VWAP"}},"State":"Generated","Terms":[{"avg VWAP":{"State":"Generated"}},{"average vwap":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.582}}]},"metrics.avg_close_price":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Avg Close Price"}},"State":"Generated","Terms":[{"avg close price":{"State":"Generated"}},{"average close price":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.591}},{"avg close value":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg close worth":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg close fee":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg close charge":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg close amount":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg close bill":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg close rate":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg close expense":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg close cost":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}}]},"metrics.VWAP_divergence_":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"VWAP Divergence $"}},"State":"Generated","Terms":[{"VWAP divergence $":{"State":"Generated"}},{"vwap divergence dollar":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.762}}]},"metrics.VWAP_divergence_1":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"VWAP Divergence %"}},"State":"Generated","Terms":[{"VWAP divergence %":{"State":"Generated"}},{"vwap divergence percentage":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.762}},{"vwap divergence pct":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.739}}]},"metrics.VWAP_signal":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"VWAP Signal"}},"State":"Generated","Terms":[{"VWAP signal":{"State":"Generated"}},{"signal":{"State":"Generated","Weight":0.97}},{"vwap indication":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"vwap pointer":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"indication":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"pointer":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"vwap sign":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"vwap gesture":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"vwap indicator":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"vwap motion":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"vwap hint":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"sign":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}}]},"metrics.hours_above_VWAP":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Hours Above VWAP"}},"State":"Generated","Terms":[{"hours above VWAP":{"State":"Generated"}},{"period above vwap":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"eras above vwap":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.482}},{"epoch above vwap":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.482}},{"age above vwap":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.468}}]},"metrics.hours_below_VWAP":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Hours Below VWAP"}},"State":"Generated","Terms":[{"hours below VWAP":{"State":"Generated"}},{"period below vwap":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"eras below vwap":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.482}},{"epoch below vwap":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.482}},{"age below vwap":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.468}}]},"metrics.VWAP_win_rate":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"VWAP Win Rate"}},"State":"Generated","Terms":[{"VWAP win rate":{"State":"Generated"}},{"rate":{"State":"Generated","Weight":0.97}},{"win rate":{"State":"Generated","Weight":0.97}},{"vwap win degree":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"vwap win frequency":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"vwap win percentage":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"vwap win ratio":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"vwap win quotient":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"win degree":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"win frequency":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"win percentage":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"win ratio":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"win quotient":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}}]},"metrics.avg_price_change_":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Avg Price Change %"}},"State":"Generated","Terms":[{"avg price change %":{"State":"Generated"}},{"avg price change percentage":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.771}},{"avg price change pct":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.748}},{"average price change %":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.599}}]},"metrics.market_open_momentum":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Market Open Momentum"}},"State":"Generated","Terms":[{"market open momentum":{"State":"Generated"}},{"momentum":{"State":"Generated","Weight":0.97}},{"open momentum":{"State":"Generated","Weight":0.97}},{"market open impetus":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"market open energy":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"open impetus":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"open energy":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"market open drive":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"market open thrust":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"market open motion":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"market open force":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"market open push":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"impetus":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}}]},"metrics.positive_momentum_hours":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Positive Momentum Hours"}},"State":"Generated","Terms":[{"positive momentum hours":{"State":"Generated"}},{"momentum hours":{"State":"Generated","Weight":0.97}},{"positive momentum period":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"momentum period":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"positive momentum eras":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.482}},{"positive momentum epoch":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.482}},{"momentum eras":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}},{"momentum epoch":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}},{"positive momentum age":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.468}},{"momentum age":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.461}}]},"metrics.negative_momentum_hours":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Negative Momentum Hours"}},"State":"Generated","Terms":[{"negative momentum hours":{"State":"Generated"}},{"momentum hours":{"State":"Generated","Weight":0.97}},{"negative momentum period":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"momentum period":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"negative momentum eras":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.482}},{"negative momentum epoch":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.482}},{"momentum eras":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}},{"momentum epoch":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}},{"negative momentum age":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.468}},{"momentum age":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.461}}]},"metrics.momentum_win_rate":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Momentum Win Rate"}},"State":"Generated","Terms":[{"momentum win rate":{"State":"Generated"}},{"rate":{"State":"Generated","Weight":0.97}},{"win rate":{"State":"Generated","Weight":0.97}},{"momentum win degree":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"momentum win frequency":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"momentum win percentage":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"momentum win ratio":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"momentum win quotient":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"win degree":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"win frequency":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"win percentage":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"win ratio":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"win quotient":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}}]},"metrics.max_hourly_gain":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Max Hourly Gain"}},"State":"Generated","Terms":[{"max hourly gain":{"State":"Generated"}},{"gain":{"State":"Generated","Weight":0.97}},{"hourly gain":{"State":"Generated","Weight":0.97}},{"maximum hourly gain":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.591}},{"max hourly improvement":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"max hourly expansion":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"max hourly addition":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"max hourly achievement":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"hourly improvement":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"hourly expansion":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"hourly addition":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"hourly achievement":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"max hourly advance":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}}]},"metrics.max_hourly_loss":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Max Hourly Loss"}},"State":"Generated","Terms":[{"max hourly loss":{"State":"Generated"}},{"loss":{"State":"Generated","Weight":0.97}},{"hourly loss":{"State":"Generated","Weight":0.97}},{"maximum hourly loss":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.591}},{"max hourly injury":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"max hourly forfeiture":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"hourly injury":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"hourly forfeiture":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"max hourly damage":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"max hourly harm":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"max hourly cost":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"max hourly hurt":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"injury":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}}]},"metrics.avg_hourly_volume":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Avg Hourly Volume"}},"State":"Generated","Terms":[{"avg hourly volume":{"State":"Generated"}},{"average hourly volume":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.591}},{"avg hourly capacity":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg hourly size":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg hourly bulk":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg hourly tome":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.482}},{"avg hourly book":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.468}},{"avg hourly work":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.468}},{"avg hourly edition":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.458}}]},"metrics.max_hourly_volume":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Max Hourly Volume"}},"State":"Generated","Terms":[{"max hourly volume":{"State":"Generated"}},{"hourly volume":{"State":"Generated","Weight":0.97}},{"maximum hourly volume":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.591}},{"max hourly capacity":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"max hourly size":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"max hourly bulk":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"hourly capacity":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"hourly size":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"hourly bulk":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"max hourly tome":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.482}},{"hourly tome":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}},{"max hourly book":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.468}}]},"metrics.total_hourly_volume":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Total Hourly Volume"}},"State":"Generated","Terms":[{"total hourly volume":{"State":"Generated"}},{"hourly volume":{"State":"Generated","Weight":0.97}},{"aggregate hourly volume":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.591}},{"overall hourly volume":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.591}},{"total hourly capacity":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"total hourly size":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"total hourly bulk":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"hourly capacity":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"hourly size":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"hourly bulk":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"total hourly tome":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.482}},{"hourly tome":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}}]},"metrics.avg_trade_count":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Avg Trade Count"}},"State":"Generated","Terms":[{"avg trade count":{"State":"Generated"}},{"avg trade amount":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.739}},{"average trade count":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.591}}]},"metrics.volume_vs_avg_ratio":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Volume vs Avg Ratio"}},"State":"Generated","Terms":[{"volume vs avg ratio":{"State":"Generated"}},{"volume vs average ratio":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.599}},{"volume vs avg relation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.514}},{"volume vs avg percentage":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.514}},{"volume vs avg quotient":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.514}},{"volume vs avg relationship":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.514}},{"volume vs avg proportion":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.499}},{"volume vs avg share":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.499}},{"volume vs avg fraction":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.499}},{"volume vs avg part":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.499}}]},"metrics.volume_spike_flag":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Volume Spike Flag"}},"State":"Generated","Terms":[{"volume spike flag":{"State":"Generated"}},{"flag":{"State":"Generated","Weight":0.97}},{"spike flag":{"State":"Generated","Weight":0.97}},{"volume spike ensign":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"volume spike pennant":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"volume spike pennon":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"volume spike emblem":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"volume spike streamer":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.508}},{"spike ensign":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"spike pennant":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"spike pennon":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"spike emblem":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"spike streamer":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}}]},"metrics.avg_volume_per_trade":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Avg Volume per Trade"}},"State":"Generated","Terms":[{"avg volume per trade":{"State":"Generated"}},{"average volume per trade":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.599}},{"avg capacity per trade":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.499}},{"avg size per trade":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.499}},{"avg bulk per trade":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.499}},{"avg tome per trade":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.489}},{"avg book per trade":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.474}},{"avg work per trade":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.474}},{"avg edition per trade":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.464}},{"avg part per trade":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.45}},{"avg section per trade":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.45}}]},"metrics.hourly_return":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Hourly Return"}},"State":"Generated","Terms":[{"hourly return":{"State":"Generated"}},{"return":{"State":"Generated","Weight":0.97}},{"hourly reappearance":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"hourly reoccurrence":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"hourly homecoming":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"hourly arrival":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"reappearance":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"reoccurrence":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"homecoming":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"arrival":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"hourly revenue":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}},{"revenue":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.466}}]},"metrics.return_variance":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Return Variance"}},"State":"Generated","Terms":[{"return variance":{"State":"Generated"}},{"variance":{"State":"Generated","Weight":0.97}},{"return alteration":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"return modification":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"return adjustment":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"alteration":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"modification":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"adjustment":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"return change":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"return discrepancy":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}},{"return inconsistency":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}},{"return disagreement":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.475}}]},"metrics.return_std_dev":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Return Std Dev"}},"State":"Generated","Terms":[{"return std dev":{"State":"Generated"}}]},"metrics.sharpelike_ratio":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Sharpe-like Ratio"}},"State":"Generated","Terms":[{"sharpe-like ratio":{"State":"Generated"}},{"sharpe like ratio":{"State":"Generated","Weight":0.97}},{"ratio":{"State":"Generated","Weight":0.97}},{"like ratio":{"State":"Generated","Weight":0.97}},{"sharpe":{"State":"Generated","Weight":0.97}},{"like relation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"like percentage":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"like quotient":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"like relationship":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.5}},{"relation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"quotient":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"relationship":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"like proportion":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"like share":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}},{"like fraction":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.485}}]},"metrics.avg_open_price":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Avg Open Price"}},"State":"Generated","Terms":[{"avg open price":{"State":"Generated"}},{"average open price":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.591}},{"avg open value":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg open worth":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg open fee":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg open charge":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg open amount":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg open bill":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg open rate":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg open expense":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg open cost":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"Open":{"State":"Suggested","Source":{"Type":"External","Agent":"PowerBI.VisualColumnRename"},"Weight":0.9}}]},"metrics.avg_high_price":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Avg High Price"}},"State":"Generated","Terms":[{"avg high price":{"State":"Generated"}},{"average high price":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.591}},{"avg high value":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg high worth":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg high fee":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg high charge":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg high amount":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg high bill":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg high rate":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg high expense":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg high cost":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"High":{"State":"Suggested","Source":{"Type":"External","Agent":"PowerBI.VisualColumnRename"},"Weight":0.9}}]},"metrics.avg_low_price":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Avg Low Price"}},"State":"Generated","Terms":[{"avg low price":{"State":"Generated"}},{"average low price":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.591}},{"avg low value":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg low worth":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg low fee":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg low charge":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg low amount":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg low bill":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg low rate":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg low expense":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"avg low cost":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"Low":{"State":"Suggested","Source":{"Type":"External","Agent":"PowerBI.VisualColumnRename"},"Weight":0.9}}]},"metrics.latest_close_price":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Latest Close Price"}},"State":"Generated","Terms":[{"latest close price":{"State":"Generated"}},{"latest close value":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"latest close worth":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"latest close fee":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"latest close charge":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"latest close amount":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"latest close bill":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"latest close rate":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"latest close expense":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"latest close cost":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"latest close outlay":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.492}},{"Close":{"State":"Suggested","Source":{"Type":"External","Agent":"PowerBI.VisualColumnRename"},"Weight":0.9}}]},"metrics.change":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Change"}},"State":"Generated","Terms":[{"change":{"State":"Generated"}},{"alteration":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"modification":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"variation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"transformation":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"revolution":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"conversion":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"adjustment":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"amendment":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.491}},{"difference":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"cash":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.452}}]},"metrics.SVG_trending_up":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"SVG Trending Up"}},"State":"Generated","Terms":[{"SVG trending up":{"State":"Generated"}},{"up":{"State":"Generated","Weight":0.97}},{"trending up":{"State":"Generated","Weight":0.97}},{"active":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"winning":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.452}},{"leading":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.452}}]},"metrics.SVG_trending_down":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"SVG Trending Down"}},"State":"Generated","Terms":[{"SVG trending down":{"State":"Generated"}},{"down":{"State":"Generated","Weight":0.97}},{"trending down":{"State":"Generated","Weight":0.97}},{"blue":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.476}},{"behind":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.452}},{"losing":{"Type":"Noun","State":"Suggested","Source":{"Agent":"Thesaurus"},"Weight":0.452}}]},"metrics.change_SVG":{"Definition":{"Binding":{"ConceptualEntity":"Metrics","ConceptualProperty":"Change SVG"}},"State":"Generated","Terms":[{"change SVG":{"State":"Generated"}},{"SVG":{"State":"Generated","Weight":0.97}},{"Change":{"State":"Suggested","Source":{"Type":"External","Agent":"PowerBI.VisualColumnRename"},"Weight":0.9}}]}},"Relationships":{"fct_stock_ohlcv_hourly_has_metrics_change_SVG":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.change_SVG":{"Target":{"Entity":"metrics.change_SVG"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.change_SVG"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_change_SVG"}]},"metrics_has_SVG_trending_down":{"Binding":{"ConceptualEntity":"Metrics"},"State":"Generated","Roles":{"metrics":{"Target":{"Entity":"metrics"}},"metrics.SVG_trending_down":{"Target":{"Entity":"metrics.SVG_trending_down"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"metrics"},"Object":{"Role":"metrics.SVG_trending_down"}},"State":"Generated","Weight":0.99,"ID":"metrics_have_SVG_trending_down"},{"Verb":{"Subject":{"Role":"metrics"},"Verbs":[{"trend":{"State":"Generated"}}],"PrepositionalPhrases":[{"Prepositions":[{"down":{"State":"Generated"}}],"Object":{"Role":"metrics.SVG_trending_down"}}]},"State":"Generated","Weight":0.95,"ID":"metrics_trend_down_SVG_trending_down"},{"Preposition":{"Subject":{"Role":"metrics"},"Prepositions":[{"down":{"State":"Generated"}}],"Object":{"Role":"metrics.SVG_trending_down"}},"State":"Generated","Weight":0.99,"ID":"metrics_are_down_SVG_trending_down"}]},"metrics_has_SVG_trending_up":{"Binding":{"ConceptualEntity":"Metrics"},"State":"Generated","Roles":{"metrics":{"Target":{"Entity":"metrics"}},"metrics.SVG_trending_up":{"Target":{"Entity":"metrics.SVG_trending_up"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"metrics"},"Object":{"Role":"metrics.SVG_trending_up"}},"State":"Generated","Weight":0.99,"ID":"metrics_have_SVG_trending_up"},{"Verb":{"Subject":{"Role":"metrics"},"Verbs":[{"trend":{"State":"Generated"}}],"PrepositionalPhrases":[{"Prepositions":[{"up":{"State":"Generated"}}],"Object":{"Role":"metrics.SVG_trending_up"}}]},"State":"Generated","Weight":0.95,"ID":"metrics_trend_up_SVG_trending_up"},{"Preposition":{"Subject":{"Role":"metrics"},"Prepositions":[{"up":{"State":"Generated"}}],"Object":{"Role":"metrics.SVG_trending_up"}},"State":"Generated","Weight":0.99,"ID":"metrics_are_up_SVG_trending_up"}]},"fct_stock_ohlcv_hourly_has_metrics_change":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.change":{"Target":{"Entity":"metrics.change"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.change"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_change"}]},"fct_stock_ohlcv_hourly_has_metrics_latest_close_price":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.latest_close_price":{"Target":{"Entity":"metrics.latest_close_price"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.latest_close_price"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_latest_close_price"}]},"fct_stock_ohlcv_hourly_has_metrics_avg_low_price":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.avg_low_price":{"Target":{"Entity":"metrics.avg_low_price"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.avg_low_price"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_avg_low_price"}]},"fct_stock_ohlcv_hourly_has_metrics_avg_high_price":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.avg_high_price":{"Target":{"Entity":"metrics.avg_high_price"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.avg_high_price"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_avg_high_price"}]},"fct_stock_ohlcv_hourly_has_metrics_avg_open_price":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.avg_open_price":{"Target":{"Entity":"metrics.avg_open_price"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.avg_open_price"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_avg_open_price"}]},"fct_stock_ohlcv_hourly_has_metrics_sharpelike_ratio":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.sharpelike_ratio":{"Target":{"Entity":"metrics.sharpelike_ratio"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.sharpelike_ratio"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_sharpelike_ratio"}]},"fct_stock_ohlcv_hourly_has_metrics_return_std_dev":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.return_std_dev":{"Target":{"Entity":"metrics.return_std_dev"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.return_std_dev"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_return_std_dev"}]},"fct_stock_ohlcv_hourly_has_metrics_return_variance":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.return_variance":{"Target":{"Entity":"metrics.return_variance"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.return_variance"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_return_variance"}]},"fct_stock_ohlcv_hourly_has_metrics_hourly_return":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.hourly_return":{"Target":{"Entity":"metrics.hourly_return"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.hourly_return"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_hourly_return"}]},"fct_stock_ohlcv_hourly_has_metrics_avg_volume_per_trade":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.avg_volume_per_trade":{"Target":{"Entity":"metrics.avg_volume_per_trade"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.avg_volume_per_trade"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_avg_volume_per_trade"}]},"fct_stock_ohlcv_hourly_has_metrics_volume_spike_flag":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.volume_spike_flag":{"Target":{"Entity":"metrics.volume_spike_flag"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.volume_spike_flag"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_volume_spike_flag"}]},"fct_stock_ohlcv_hourly_has_metrics_volume_vs_avg_ratio":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.volume_vs_avg_ratio":{"Target":{"Entity":"metrics.volume_vs_avg_ratio"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.volume_vs_avg_ratio"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_volume_vs_avg_ratio"}]},"fct_stock_ohlcv_hourly_has_metrics_avg_trade_count":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.avg_trade_count":{"Target":{"Entity":"metrics.avg_trade_count"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.avg_trade_count"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_avg_trade_count"}]},"fct_stock_ohlcv_hourly_has_metrics_total_hourly_volume":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.total_hourly_volume":{"Target":{"Entity":"metrics.total_hourly_volume"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.total_hourly_volume"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_total_hourly_volume"}]},"fct_stock_ohlcv_hourly_has_metrics_max_hourly_volume":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.max_hourly_volume":{"Target":{"Entity":"metrics.max_hourly_volume"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.max_hourly_volume"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_max_hourly_volume"}]},"fct_stock_ohlcv_hourly_has_metrics_avg_hourly_volume":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.avg_hourly_volume":{"Target":{"Entity":"metrics.avg_hourly_volume"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.avg_hourly_volume"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_avg_hourly_volume"}]},"fct_stock_ohlcv_hourly_has_metrics_max_hourly_loss":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.max_hourly_loss":{"Target":{"Entity":"metrics.max_hourly_loss"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.max_hourly_loss"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_max_hourly_loss"}]},"fct_stock_ohlcv_hourly_has_metrics_max_hourly_gain":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.max_hourly_gain":{"Target":{"Entity":"metrics.max_hourly_gain"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.max_hourly_gain"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_max_hourly_gain"}]},"fct_stock_ohlcv_hourly_has_metrics_momentum_win_rate":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.momentum_win_rate":{"Target":{"Entity":"metrics.momentum_win_rate"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.momentum_win_rate"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_momentum_win_rate"}]},"fct_stock_ohlcv_hourly_has_metrics_negative_momentum_hours":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.negative_momentum_hours":{"Target":{"Entity":"metrics.negative_momentum_hours"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.negative_momentum_hours"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_negative_momentum_hours"}]},"fct_stock_ohlcv_hourly_has_metrics_positive_momentum_hours":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.positive_momentum_hours":{"Target":{"Entity":"metrics.positive_momentum_hours"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.positive_momentum_hours"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_positive_momentum_hours"}]},"fct_stock_ohlcv_hourly_has_metrics_market_open_momentum":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.market_open_momentum":{"Target":{"Entity":"metrics.market_open_momentum"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.market_open_momentum"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_market_open_momentum"}]},"fct_stock_ohlcv_hourly_has_metrics_avg_price_change_":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.avg_price_change_":{"Target":{"Entity":"metrics.avg_price_change_"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.avg_price_change_"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_avg_price_change_"}]},"fct_stock_ohlcv_hourly_has_metrics_VWAP_win_rate":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.VWAP_win_rate":{"Target":{"Entity":"metrics.VWAP_win_rate"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.VWAP_win_rate"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_VWAP_win_rate"}]},"fct_stock_ohlcv_hourly_has_metrics_hours_below_VWAP":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.hours_below_VWAP":{"Target":{"Entity":"metrics.hours_below_VWAP"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.hours_below_VWAP"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_hours_below_VWAP"}]},"fct_stock_ohlcv_hourly_has_metrics_hours_above_VWAP":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.hours_above_VWAP":{"Target":{"Entity":"metrics.hours_above_VWAP"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.hours_above_VWAP"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_hours_above_VWAP"}]},"fct_stock_ohlcv_hourly_has_metrics_VWAP_signal":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.VWAP_signal":{"Target":{"Entity":"metrics.VWAP_signal"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.VWAP_signal"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_VWAP_signal"}]},"fct_stock_ohlcv_hourly_has_metrics_VWAP_divergence_1":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.VWAP_divergence_1":{"Target":{"Entity":"metrics.VWAP_divergence_1"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.VWAP_divergence_1"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_VWAP_divergence_"}]},"fct_stock_ohlcv_hourly_has_metrics_VWAP_divergence_":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.VWAP_divergence_":{"Target":{"Entity":"metrics.VWAP_divergence_"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.VWAP_divergence_"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_VWAP_divergence_1"}]},"fct_stock_ohlcv_hourly_has_metrics_avg_close_price":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.avg_close_price":{"Target":{"Entity":"metrics.avg_close_price"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.avg_close_price"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_avg_close_price"}]},"fct_stock_ohlcv_hourly_has_metrics_avg_VWAP":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.avg_VWAP":{"Target":{"Entity":"metrics.avg_VWAP"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.avg_VWAP"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_avg_VWAP"}]},"fct_stock_ohlcv_hourly_has_metrics_price_range_":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.price_range_":{"Target":{"Entity":"metrics.price_range_"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.price_range_"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_price_range_"}]},"fct_stock_ohlcv_hourly_has_metrics_max_price_range":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.max_price_range":{"Target":{"Entity":"metrics.max_price_range"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.max_price_range"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_max_price_range"}]},"fct_stock_ohlcv_hourly_has_metrics_avg_price_range":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.avg_price_range":{"Target":{"Entity":"metrics.avg_price_range"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.avg_price_range"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_avg_price_range"}]},"fct_stock_ohlcv_hourly_has_metrics_max_volatility_StdDev":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.max_volatility_StdDev":{"Target":{"Entity":"metrics.max_volatility_StdDev"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.max_volatility_StdDev"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_max_volatility_StdDev"}]},"fct_stock_ohlcv_hourly_has_metrics_avg_volatility_StdDev":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.avg_volatility_StdDev":{"Target":{"Entity":"metrics.avg_volatility_StdDev"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.avg_volatility_StdDev"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_avg_volatility_StdDev"}]},"fct_stock_ohlcv_hourly_has_metrics_hourly_periods":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"metrics.hourly_periods":{"Target":{"Entity":"metrics.hourly_periods"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"metrics.hourly_periods"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_hourly_periods"}]},"fct_stock_trade_has_metrics_trading_days":{"Binding":{"ConceptualEntity":"fct_stock_trades"},"State":"Generated","Roles":{"fct_stock_trade":{"Target":{"Entity":"fct_stock_trade"}},"metrics.trading_days":{"Target":{"Entity":"metrics.trading_days"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_trade"},"Object":{"Role":"metrics.trading_days"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_trades_have_trading_days"}]},"fct_stock_trade_has_metrics_distinct_stocks":{"Binding":{"ConceptualEntity":"fct_stock_trades"},"State":"Generated","Roles":{"fct_stock_trade":{"Target":{"Entity":"fct_stock_trade"}},"metrics.distinct_stocks":{"Target":{"Entity":"metrics.distinct_stocks"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_trade"},"Object":{"Role":"metrics.distinct_stocks"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_trades_have_distinct_stocks"}]},"fct_stock_trade_has_metrics_average_price":{"Binding":{"ConceptualEntity":"fct_stock_trades"},"State":"Generated","Roles":{"fct_stock_trade":{"Target":{"Entity":"fct_stock_trade"}},"metrics.average_price":{"Target":{"Entity":"metrics.average_price"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_trade"},"Object":{"Role":"metrics.average_price"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_trades_have_average_price"}]},"fct_stock_trade_has_metrics_total_trade_value":{"Binding":{"ConceptualEntity":"fct_stock_trades"},"State":"Generated","Roles":{"fct_stock_trade":{"Target":{"Entity":"fct_stock_trade"}},"metrics.total_trade_value":{"Target":{"Entity":"metrics.total_trade_value"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_trade"},"Object":{"Role":"metrics.total_trade_value"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_trades_have_total_trade_value"}]},"fct_stock_trade_has_metrics_total_volume":{"Binding":{"ConceptualEntity":"fct_stock_trades"},"State":"Generated","Roles":{"fct_stock_trade":{"Target":{"Entity":"fct_stock_trade"}},"metrics.total_volume":{"Target":{"Entity":"metrics.total_volume"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_trade"},"Object":{"Role":"metrics.total_volume"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_trades_have_total_volume"}]},"fct_stock_trade_has_metrics_total_trades":{"Binding":{"ConceptualEntity":"fct_stock_trades"},"State":"Generated","Roles":{"fct_stock_trade":{"Target":{"Entity":"fct_stock_trade"}},"metrics.total_trades":{"Target":{"Entity":"metrics.total_trades"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_trade"},"Object":{"Role":"metrics.total_trades"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_trades_have_total_trades"}]},"dim_date_has_is_trading_day":{"Binding":{"ConceptualEntity":"dim_date"},"State":"Generated","Roles":{"dim_date":{"Target":{"Entity":"dim_date"}},"dim_date.is_trading_day":{"Target":{"Entity":"dim_date.is_trading_day"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"dim_date"},"Object":{"Role":"dim_date.is_trading_day"}},"State":"Generated","Weight":0.99,"ID":"dim_dates_have_is_trading_days"}]},"dim_date_has_is_weekday":{"Binding":{"ConceptualEntity":"dim_date"},"State":"Generated","Roles":{"dim_date":{"Target":{"Entity":"dim_date"}},"dim_date.is_weekday":{"Target":{"Entity":"dim_date.is_weekday"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"dim_date"},"Object":{"Role":"dim_date.is_weekday"}},"State":"Generated","Weight":0.99,"ID":"dim_dates_have_is_weekdays"}]},"dim_date_has_day_name":{"Binding":{"ConceptualEntity":"dim_date"},"State":"Generated","Roles":{"dim_date":{"Target":{"Entity":"dim_date"}},"dim_date.day_name":{"Target":{"Entity":"dim_date.day_name"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"dim_date"},"Object":{"Role":"dim_date.day_name"}},"State":"Generated","Weight":0.99,"ID":"dim_dates_have_day_names"}]},"dim_date_has_day_of_week":{"Binding":{"ConceptualEntity":"dim_date"},"State":"Generated","Roles":{"dim_date":{"Target":{"Entity":"dim_date"}},"dim_date.day_of_week":{"Target":{"Entity":"dim_date.day_of_week"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"dim_date"},"Object":{"Role":"dim_date.day_of_week"}},"State":"Generated","Weight":0.99,"ID":"dim_dates_have_day_of_week"}]},"dim_date_has_day_of_month":{"Binding":{"ConceptualEntity":"dim_date"},"State":"Generated","Roles":{"dim_date":{"Target":{"Entity":"dim_date"}},"dim_date.day_of_month":{"Target":{"Entity":"dim_date.day_of_month"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"dim_date"},"Object":{"Role":"dim_date.day_of_month"}},"State":"Generated","Weight":0.99,"ID":"dim_dates_have_day_of_month"}]},"dim_date_has_week_of_year":{"Binding":{"ConceptualEntity":"dim_date"},"State":"Generated","Roles":{"dim_date":{"Target":{"Entity":"dim_date"}},"dim_date.week_of_year":{"Target":{"Entity":"dim_date.week_of_year"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"dim_date"},"Object":{"Role":"dim_date.week_of_year"}},"State":"Generated","Weight":0.99,"ID":"dim_dates_have_week_of_year"}]},"dim_date_has_month_name":{"Binding":{"ConceptualEntity":"dim_date"},"State":"Generated","Roles":{"dim_date":{"Target":{"Entity":"dim_date"}},"dim_date.month_name":{"Target":{"Entity":"dim_date.month_name"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"dim_date"},"Object":{"Role":"dim_date.month_name"}},"State":"Generated","Weight":0.99,"ID":"dim_dates_have_month_names"}]},"dim_date_has_month":{"Binding":{"ConceptualEntity":"dim_date"},"State":"Generated","Roles":{"dim_date":{"Target":{"Entity":"dim_date"}},"dim_date.month":{"Target":{"Entity":"dim_date.month"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"dim_date"},"Object":{"Role":"dim_date.month"}},"State":"Generated","Weight":0.99,"ID":"dim_dates_have_months"}]},"dim_date_has_quarter":{"Binding":{"ConceptualEntity":"dim_date"},"State":"Generated","Roles":{"dim_date":{"Target":{"Entity":"dim_date"}},"dim_date.quarter":{"Target":{"Entity":"dim_date.quarter"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"dim_date"},"Object":{"Role":"dim_date.quarter"}},"State":"Generated","Weight":0.99,"ID":"dim_dates_have_quarters"}]},"dim_date_has_year":{"Binding":{"ConceptualEntity":"dim_date"},"State":"Generated","Roles":{"dim_date":{"Target":{"Entity":"dim_date"}},"dim_date.year":{"Target":{"Entity":"dim_date.year"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"dim_date"},"Object":{"Role":"dim_date.year"}},"State":"Generated","Weight":0.99,"ID":"dim_dates_have_years"}]},"dim_date_has_date":{"Binding":{"ConceptualEntity":"dim_date"},"State":"Generated","Roles":{"dim_date":{"Target":{"Entity":"dim_date"}},"dim_date.date":{"Target":{"Entity":"dim_date.date"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"dim_date"},"Object":{"Role":"dim_date.date"}},"State":"Generated","Weight":0.99,"ID":"dim_dates_have_dates"}]},"dim_date_has_date_key":{"Binding":{"ConceptualEntity":"dim_date"},"State":"Generated","Roles":{"dim_date":{"Target":{"Entity":"dim_date"}},"dim_date.date_key":{"Target":{"Entity":"dim_date.date_key"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"dim_date"},"Object":{"Role":"dim_date.date_key"}},"State":"Generated","Weight":0.99,"ID":"dim_dates_have_date_keys"}]},"fct_stock_trade_has_traded_date":{"Binding":{"ConceptualEntity":"fct_stock_trades"},"State":"Generated","Roles":{"fct_stock_trade":{"Target":{"Entity":"fct_stock_trade"}},"fct_stock_trade.traded_date":{"Target":{"Entity":"fct_stock_trade.traded_date"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_trade"},"Object":{"Role":"fct_stock_trade.traded_date"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_trades_have_traded_dates"}]},"fct_stock_trade_has_traded_hour":{"Binding":{"ConceptualEntity":"fct_stock_trades"},"State":"Generated","Roles":{"fct_stock_trade":{"Target":{"Entity":"fct_stock_trade"}},"fct_stock_trade.traded_hour":{"Target":{"Entity":"fct_stock_trade.traded_hour"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_trade"},"Object":{"Role":"fct_stock_trade.traded_hour"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_trades_have_traded_hours"}]},"fct_stock_trade_has_traded_at":{"Binding":{"ConceptualEntity":"fct_stock_trades"},"State":"Generated","Roles":{"fct_stock_trade":{"Target":{"Entity":"fct_stock_trade"}},"fct_stock_trade.traded_at":{"Target":{"Entity":"fct_stock_trade.traded_at"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_trade"},"Object":{"Role":"fct_stock_trade.traded_at"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_trades_have_traded_at"}]},"fct_stock_trade_has_trade_value_usd":{"Binding":{"ConceptualEntity":"fct_stock_trades"},"State":"Generated","Roles":{"fct_stock_trade":{"Target":{"Entity":"fct_stock_trade"}},"fct_stock_trade.trade_value_usd":{"Target":{"Entity":"fct_stock_trade.trade_value_usd"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_trade"},"Object":{"Role":"fct_stock_trade.trade_value_usd"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_trades_have_trade_value_usd"}]},"fct_stock_trade_has_volume":{"Binding":{"ConceptualEntity":"fct_stock_trades"},"State":"Generated","Roles":{"fct_stock_trade":{"Target":{"Entity":"fct_stock_trade"}},"fct_stock_trade.volume":{"Target":{"Entity":"fct_stock_trade.volume"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_trade"},"Object":{"Role":"fct_stock_trade.volume"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_trades_have_volumes"}]},"fct_stock_trade_has_price":{"Binding":{"ConceptualEntity":"fct_stock_trades"},"State":"Generated","Roles":{"fct_stock_trade":{"Target":{"Entity":"fct_stock_trade"}},"fct_stock_trade.price":{"Target":{"Entity":"fct_stock_trade.price"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_trade"},"Object":{"Role":"fct_stock_trade.price"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_trades_have_prices"},{"Adjective":{"Subject":{"Role":"fct_stock_trade"},"Adjectives":[{"expensive":{"State":"Generated"}}],"Antonyms":[{"cheap":{"State":"Generated"}}],"Measurement":{"Role":"fct_stock_trade.price"}},"State":"Generated","Weight":0.99,"ID":"price_indicates_how_expensive_fct_stock_trades_are"}]},"fct_stock_ohlcv_hourly_has_traded_hour":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"fct_stock_ohlcv_hourly.traded_hour":{"Target":{"Entity":"fct_stock_ohlcv_hourly.traded_hour"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"fct_stock_ohlcv_hourly.traded_hour"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_traded_hours"}]},"fct_stock_ohlcv_hourly_has_traded_date":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"fct_stock_ohlcv_hourly.traded_date":{"Target":{"Entity":"fct_stock_ohlcv_hourly.traded_date"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"fct_stock_ohlcv_hourly.traded_date"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_traded_dates"}]},"fct_stock_ohlcv_hourly_has_pct_change":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"fct_stock_ohlcv_hourly.pct_change":{"Target":{"Entity":"fct_stock_ohlcv_hourly.pct_change"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"fct_stock_ohlcv_hourly.pct_change"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_pct_changes"}]},"fct_stock_ohlcv_hourly_has_price_range":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"fct_stock_ohlcv_hourly.price_range":{"Target":{"Entity":"fct_stock_ohlcv_hourly.price_range"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"fct_stock_ohlcv_hourly.price_range"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_price_ranges"}]},"fct_stock_ohlcv_hourly_has_stddev_price":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"fct_stock_ohlcv_hourly.stddev_price":{"Target":{"Entity":"fct_stock_ohlcv_hourly.stddev_price"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"fct_stock_ohlcv_hourly.stddev_price"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_stddev_prices"}]},"fct_stock_ohlcv_hourly_has_vwap":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"fct_stock_ohlcv_hourly.vwap":{"Target":{"Entity":"fct_stock_ohlcv_hourly.vwap"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"fct_stock_ohlcv_hourly.vwap"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_vwaps"}]},"fct_stock_ohlcv_hourly_has_trade_count":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"fct_stock_ohlcv_hourly.trade_count":{"Target":{"Entity":"fct_stock_ohlcv_hourly.trade_count"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"fct_stock_ohlcv_hourly.trade_count"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_trade_counts"}]},"fct_stock_ohlcv_hourly_has_total_volume":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"fct_stock_ohlcv_hourly.total_volume":{"Target":{"Entity":"fct_stock_ohlcv_hourly.total_volume"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"fct_stock_ohlcv_hourly.total_volume"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_total_volumes"}]},"fct_stock_ohlcv_hourly_has_close_price":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"fct_stock_ohlcv_hourly.close_price":{"Target":{"Entity":"fct_stock_ohlcv_hourly.close_price"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"fct_stock_ohlcv_hourly.close_price"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_close_prices"}]},"fct_stock_ohlcv_hourly_has_low_price":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"fct_stock_ohlcv_hourly.low_price":{"Target":{"Entity":"fct_stock_ohlcv_hourly.low_price"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"fct_stock_ohlcv_hourly.low_price"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_low_prices"}]},"fct_stock_ohlcv_hourly_has_high_price":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"fct_stock_ohlcv_hourly.high_price":{"Target":{"Entity":"fct_stock_ohlcv_hourly.high_price"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"fct_stock_ohlcv_hourly.high_price"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_high_prices"}]},"fct_stock_ohlcv_hourly_has_open_price":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"fct_stock_ohlcv_hourly.open_price":{"Target":{"Entity":"fct_stock_ohlcv_hourly.open_price"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"fct_stock_ohlcv_hourly.open_price"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_open_prices"}]},"dim_company_has_logo_url":{"Binding":{"ConceptualEntity":"dim_companies"},"State":"Generated","Roles":{"dim_company":{"Target":{"Entity":"dim_company"}},"dim_company.logo_url":{"Target":{"Entity":"dim_company.logo_url"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"dim_company"},"Object":{"Role":"dim_company.logo_url"}},"State":"Generated","Weight":0.99,"ID":"dim_companies_have_logo_urls"}]},"dim_company_has_exchange":{"Binding":{"ConceptualEntity":"dim_companies"},"State":"Generated","Roles":{"dim_company":{"Target":{"Entity":"dim_company"}},"dim_company.exchange":{"Target":{"Entity":"dim_company.exchange"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"dim_company"},"Object":{"Role":"dim_company.exchange"}},"State":"Generated","Weight":0.99,"ID":"dim_companies_have_exchanges"}]},"dim_company_has_company_name":{"Binding":{"ConceptualEntity":"dim_companies"},"State":"Generated","Roles":{"dim_company":{"Target":{"Entity":"dim_company"}},"dim_company.company_name":{"Target":{"Entity":"dim_company.company_name"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"dim_company"},"Object":{"Role":"dim_company.company_name"}},"State":"Generated","Weight":0.99,"ID":"dim_companies_have_company_names"},{"Name":{"Subject":{"Role":"dim_company"},"Name":{"Role":"dim_company.company_name"}},"State":"Generated","Weight":0.99,"ID":"company_names_are_names_IDs_of_dim_companies"}]},"dim_company_has_symbol":{"Binding":{"ConceptualEntity":"dim_companies"},"State":"Generated","Roles":{"dim_company":{"Target":{"Entity":"dim_company"}},"dim_company.symbol":{"Target":{"Entity":"dim_company.symbol"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"dim_company"},"Object":{"Role":"dim_company.symbol"}},"State":"Generated","Weight":0.99,"ID":"dim_companies_have_symbols"}]},"fct_stock_trade_is_traded_on_traded_date":{"Binding":{"ConceptualEntity":"fct_stock_trades"},"State":"Generated","Roles":{"fct_stock_trade":{"Target":{"Entity":"fct_stock_trade"}},"fct_stock_trade.traded_date":{"Target":{"Entity":"fct_stock_trade.traded_date"}}},"SemanticSlots":{"When":{"Role":"fct_stock_trade.traded_date"}},"Phrasings":[{"Verb":{"Verbs":[{"trade":{"State":"Generated"}}],"Object":{"Role":"fct_stock_trade"}},"State":"Generated","Weight":0.9,"ID":"fct_stock_trades_are_traded_on_traded_dates"}]},"fct_stock_trade_is_traded_on_traded_hour":{"Binding":{"ConceptualEntity":"fct_stock_trades"},"State":"Generated","Roles":{"fct_stock_trade":{"Target":{"Entity":"fct_stock_trade"}},"fct_stock_trade.traded_hour":{"Target":{"Entity":"fct_stock_trade.traded_hour"}}},"SemanticSlots":{"When":{"Role":"fct_stock_trade.traded_hour"}},"Phrasings":[{"Verb":{"Verbs":[{"trade":{"State":"Generated"}}],"Object":{"Role":"fct_stock_trade"}},"State":"Generated","Weight":0.9,"ID":"fct_stock_trades_are_traded_on_traded_hours"}]},"fct_stock_trade_is_traded_on_traded_at":{"Binding":{"ConceptualEntity":"fct_stock_trades"},"State":"Generated","Roles":{"fct_stock_trade":{"Target":{"Entity":"fct_stock_trade"}},"fct_stock_trade.traded_at":{"Target":{"Entity":"fct_stock_trade.traded_at"}}},"SemanticSlots":{"When":{"Role":"fct_stock_trade.traded_at"}},"Phrasings":[{"Verb":{"Verbs":[{"trade":{"State":"Generated"}}],"Object":{"Role":"fct_stock_trade"}},"State":"Generated","Weight":0.9,"ID":"fct_stock_trades_are_traded_on_traded_at"}]},"fct_stock_ohlcv_hourly_is_traded_on_traded_hour":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"fct_stock_ohlcv_hourly.traded_hour":{"Target":{"Entity":"fct_stock_ohlcv_hourly.traded_hour"}}},"SemanticSlots":{"When":{"Role":"fct_stock_ohlcv_hourly.traded_hour"}},"Phrasings":[{"Verb":{"Verbs":[{"trade":{"State":"Generated"}}],"Object":{"Role":"fct_stock_ohlcv_hourly"}},"State":"Generated","Weight":0.9,"ID":"fct_stock_ohlcv_hourlies_are_traded_on_traded_hours"}]},"fct_stock_ohlcv_hourly_is_traded_on_traded_date":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"fct_stock_ohlcv_hourly.traded_date":{"Target":{"Entity":"fct_stock_ohlcv_hourly.traded_date"}}},"SemanticSlots":{"When":{"Role":"fct_stock_ohlcv_hourly.traded_date"}},"Phrasings":[{"Verb":{"Verbs":[{"trade":{"State":"Generated"}}],"Object":{"Role":"fct_stock_ohlcv_hourly"}},"State":"Generated","Weight":0.9,"ID":"fct_stock_ohlcv_hourlies_are_traded_on_traded_dates"}]},"dim_date_is_weekday":{"Binding":{"ConceptualEntity":"dim_date"},"State":"Generated","Roles":{"dim_date":{"Target":{"Entity":"dim_date"}},"dim_date.is_weekday":{"Target":{"Entity":"dim_date.is_weekday"}}},"Conditions":[{"Target":{"Role":"dim_date.is_weekday"},"Operator":"Equals","Value":{"Boolean":[true]}}],"Phrasings":[{"Adjective":{"Subject":{"Role":"dim_date"},"Adjectives":[{"weekday":{"State":"Generated"}}]},"State":"Generated","Weight":0.99,"ID":"some_dim_dates_are_weekday_dim_dates"}]},"fct_stock_ohlcv_hourly_has_dim_date":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"dim_date":{"Target":{"Entity":"dim_date"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"dim_date"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_dim_dates"},{"Attribute":{"Subject":{"Role":"dim_date"},"Object":{"Role":"fct_stock_ohlcv_hourly"}},"State":"Generated","Weight":0.99,"ID":"dim_dates_have_fct_stock_ohlcv_hourlies"}]},"fct_stock_ohlcv_hourly_has_dim_company":{"Binding":{"ConceptualEntity":"fct_stock_ohlcv_hourly"},"State":"Generated","Roles":{"fct_stock_ohlcv_hourly":{"Target":{"Entity":"fct_stock_ohlcv_hourly"}},"dim_company":{"Target":{"Entity":"dim_company"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_ohlcv_hourly"},"Object":{"Role":"dim_company"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_ohlcv_hourlies_have_dim_companies"},{"Attribute":{"Subject":{"Role":"dim_company"},"Object":{"Role":"fct_stock_ohlcv_hourly"}},"State":"Generated","Weight":0.99,"ID":"dim_companies_have_fct_stock_ohlcv_hourlies"}]},"fct_stock_trade_has_dim_date":{"Binding":{"ConceptualEntity":"fct_stock_trades"},"State":"Generated","Roles":{"fct_stock_trade":{"Target":{"Entity":"fct_stock_trade"}},"dim_date":{"Target":{"Entity":"dim_date"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_trade"},"Object":{"Role":"dim_date"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_trades_have_dim_dates"},{"Attribute":{"Subject":{"Role":"dim_date"},"Object":{"Role":"fct_stock_trade"}},"State":"Generated","Weight":0.99,"ID":"dim_dates_have_fct_stock_trades"}]},"fct_stock_trade_has_dim_company":{"Binding":{"ConceptualEntity":"fct_stock_trades"},"State":"Generated","Roles":{"fct_stock_trade":{"Target":{"Entity":"fct_stock_trade"}},"dim_company":{"Target":{"Entity":"dim_company"}}},"Phrasings":[{"Attribute":{"Subject":{"Role":"fct_stock_trade"},"Object":{"Role":"dim_company"}},"State":"Generated","Weight":0.99,"ID":"fct_stock_trades_have_dim_companies"},{"Attribute":{"Subject":{"Role":"dim_company"},"Object":{"Role":"fct_stock_trade"}},"State":"Generated","Weight":0.99,"ID":"dim_companies_have_fct_stock_trades"}]}},"Agents":{"Internal":{"Version":"1.1.0"}}}
+				contentType: json
+
+		annotation __PBI_TimeIntelligenceEnabled = 0
+
+		annotation PBI_QueryOrder = ["dim_companies","fct_stock_ohlcv_hourly","fct_stock_trades","dim_date","Metrics"]
+
+		annotation PBI_ProTooling = ["DevMode","CalcGroup"]
+

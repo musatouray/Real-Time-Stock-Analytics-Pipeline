@@ -526,23 +526,5 @@
       ]
     },
     "drillFilterOtherVisuals": true
-  },
-  "filterConfig": {
-    "filters": [
-      {
-        "name": "53a7fdada513ac931407",
-        "field": {
-          "Column": {
-            "Expression": {
-              "SourceRef": {
-                "Entity": "dim_companies"
-              }
-            },
-            "Property": "COMPANY_NAME"
-          }
-        },
-        "type": "Categorical"
-      }
-    ]
   }
 }

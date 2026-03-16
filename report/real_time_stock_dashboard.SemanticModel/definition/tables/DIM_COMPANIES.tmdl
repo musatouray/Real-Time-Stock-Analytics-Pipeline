@@ -39,6 +39,22 @@ table dim_companies
 
 		annotation SummarizationSetBy = Automatic
 
+	column SECTOR
+		dataType: string
+		lineageTag: 0f5457ec-9992-45a0-9a44-a98f59cd5223
+		summarizeBy: none
+		sourceColumn: SECTOR
+
+		annotation SummarizationSetBy = Automatic
+
+	column INDUSTRY
+		dataType: string
+		lineageTag: bca7402d-04be-4981-a221-2c43a948b059
+		summarizeBy: none
+		sourceColumn: INDUSTRY
+
+		annotation SummarizationSetBy = Automatic
+
 	partition dim_companies = m
 		mode: import
 		source =
@@ -47,7 +63,7 @@ table dim_companies
 				    STOCK_ANALYTICS_DB_Database = Source{[Name="STOCK_ANALYTICS_DB",Kind="Database"]}[Data],
 				    MARTS_Schema = STOCK_ANALYTICS_DB_Database{[Name="MARTS",Kind="Schema"]}[Data],
 				    DIM_COMPANIES_Table = MARTS_Schema{[Name="DIM_COMPANIES",Kind="Table"]}[Data],
-				    #"Removed Other Columns" = Table.SelectColumns(DIM_COMPANIES_Table,{"SYMBOL", "COMPANY_NAME", "EXCHANGE", "LOGO_URL"})
+				    #"Removed Other Columns" = Table.SelectColumns(DIM_COMPANIES_Table,{"SYMBOL", "COMPANY_NAME", "SECTOR", "INDUSTRY", "EXCHANGE", "LOGO_URL"})
 				in
 				    #"Removed Other Columns"
 

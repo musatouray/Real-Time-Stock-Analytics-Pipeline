@@ -5,7 +5,7 @@
     "x": 20.242282933752346,
     "y": 42.820213898322265,
     "z": 2000,
-    "height": 98.097217294338279,
+    "height": 69.290891580921482,
     "width": 227.33640833291093,
     "tabOrder": 2000
   },
@@ -55,31 +55,24 @@
       "data": [
         {
           "properties": {
+            "startDate": {
+              "expr": {
+                "Literal": {
+                  "Value": "datetime'2026-03-13T00:00:00'"
+                }
+              }
+            },
+            "endDate": {
+              "expr": {
+                "Literal": {
+                  "Value": "datetime'2026-03-13T00:00:00'"
+                }
+              }
+            },
             "mode": {
               "expr": {
                 "Literal": {
-                  "Value": "'Relative'"
-                }
-              }
-            },
-            "relativeRange": {
-              "expr": {
-                "Literal": {
-                  "Value": "'This'"
-                }
-              }
-            },
-            "relativeDuration": {
-              "expr": {
-                "Literal": {
-                  "Value": "0D"
-                }
-              }
-            },
-            "relativePeriod": {
-              "expr": {
-                "Literal": {
-                  "Value": "'Days'"
+                  "Value": "'Between'"
                 }
               }
             }
@@ -115,24 +108,45 @@
                 "Where": [
                   {
                     "Condition": {
-                      "Comparison": {
-                        "ComparisonKind": 0,
+                      "And": {
                         "Left": {
-                          "Column": {
-                            "Expression": {
-                              "SourceRef": {
-                                "Source": "d"
+                          "Comparison": {
+                            "ComparisonKind": 2,
+                            "Left": {
+                              "Column": {
+                                "Expression": {
+                                  "SourceRef": {
+                                    "Source": "d"
+                                  }
+                                },
+                                "Property": "DATE"
                               }
                             },
-                            "Property": "DATE"
+                            "Right": {
+                              "Literal": {
+                                "Value": "datetime'2026-03-13T00:00:00'"
+                              }
+                            }
                           }
                         },
                         "Right": {
-                          "DateSpan": {
-                            "Expression": {
-                              "Now": {}
+                          "Comparison": {
+                            "ComparisonKind": 3,
+                            "Left": {
+                              "Column": {
+                                "Expression": {
+                                  "SourceRef": {
+                                    "Source": "d"
+                                  }
+                                },
+                                "Property": "DATE"
+                              }
                             },
-                            "TimeUnit": 0
+                            "Right": {
+                              "Literal": {
+                                "Value": "datetime'2026-03-14T00:00:00'"
+                              }
+                            }
                           }
                         }
                       }
@@ -156,6 +170,19 @@
             }
           }
         }
+      ],
+      "slider": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
       ]
     },
     "visualContainerObjects": {
@@ -166,6 +193,41 @@
               "expr": {
                 "Literal": {
                   "Value": "true"
+                }
+              }
+            },
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'start date       End date'"
+                }
+              }
+            },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'''Segoe UI Light'', wf_segoe-ui_light, helvetica, arial, sans-serif'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "8D"
+                }
+              }
+            },
+            "heading": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Normal'"
                 }
               }
             }
@@ -198,7 +260,7 @@
             "top": {
               "expr": {
                 "Literal": {
-                  "Value": "15D"
+                  "Value": "5D"
                 }
               }
             },
@@ -212,7 +274,7 @@
             "left": {
               "expr": {
                 "Literal": {
-                  "Value": "15D"
+                  "Value": "5D"
                 }
               }
             }
@@ -309,6 +371,40 @@
             }
           }
         }
+      ],
+      "subTitle": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'start date & End date'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "8D"
+                }
+              }
+            },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'''Segoe UI Light'', wf_segoe-ui_light, helvetica, arial, sans-serif'"
+                }
+              }
+            }
+          }
+        }
       ]
     },
     "drillFilterOtherVisuals": true
@@ -316,7 +412,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "0eee5dec5aa8590a00c7",
+        "name": "ab99fd94c9150d047486",
         "field": {
           "Column": {
             "Expression": {

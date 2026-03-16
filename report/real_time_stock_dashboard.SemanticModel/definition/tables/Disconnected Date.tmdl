@@ -1,0 +1,58 @@
+table 'Disconnected Date'
+	lineageTag: e0e524a1-9266-4385-8b12-2c6c3e156585
+
+	column DATE
+		formatString: Short Date
+		lineageTag: c569e93b-5669-496f-a226-b6b8c185c0a2
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: dim_date[DATE]
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column MONTH
+		lineageTag: bc3d6965-8391-448e-8102-241de0dd3395
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: dim_date[MONTH]
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column MONTH_YEAR
+		lineageTag: dc49f9e8-dcfb-40a1-a5aa-800297322754
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: dim_date[MONTH_YEAR]
+		sortByColumn: MONTH
+
+		annotation SummarizationSetBy = Automatic
+
+	column YEAR
+		formatString: 0
+		lineageTag: 125c32cc-0e51-4d12-97b5-d405679537d6
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: dim_date[YEAR]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Disconnected Date' = calculated
+		mode: import
+		source = ```
+				
+				VAR __Table = ALL(dim_date[DATE], dim_date[YEAR], dim_date[MONTH], dim_date[MONTH_YEAR])
+				RETURN
+				__Table
+				    // ADDCOLUMNS(
+				    //     __Table,
+				    //     "Month", FORMAT([DATE], "mmm-yy")
+				    // )
+				    
+				```
+
+	annotation PBI_Id = a593b390db8b453799ac12215a20c0ca
+

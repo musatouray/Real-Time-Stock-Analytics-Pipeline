@@ -318,23 +318,5 @@
       ]
     },
     "drillFilterOtherVisuals": true
-  },
-  "filterConfig": {
-    "filters": [
-      {
-        "name": "3ace52710eea839b8100",
-        "field": {
-          "Column": {
-            "Expression": {
-              "SourceRef": {
-                "Entity": "dim_companies"
-              }
-            },
-            "Property": "EXCHANGE"
-          }
-        },
-        "type": "Categorical"
-      }
-    ]
   }
 }

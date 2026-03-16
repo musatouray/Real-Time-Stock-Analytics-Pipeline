@@ -1,0 +1,161 @@
+table 'Period Filter'
+	lineageTag: b56c1d0f-11ba-41c8-98e9-821ecb838d21
+
+	calculationGroup
+
+		calculationItem 1D = ```
+				
+				VAR __Interval = -1
+				VAR __CutOff = [As of Date]
+				
+				RETURN
+				CALCULATE(
+				    SELECTEDMEASURE(),
+				    DATESINPERIOD(
+				        fct_stock_ohlcv_hourly[TRADED_DATE],
+				        __Cutoff,
+				        __Interval,
+				        DAY
+				    )
+				)
+				
+				
+				```
+
+		calculationItem 5D =
+				
+				VAR __Interval = -5
+				VAR __CutOff = [As of Date]
+				
+				RETURN
+				CALCULATE(
+				    SELECTEDMEASURE(),
+				    DATESINPERIOD(
+				        fct_stock_ohlcv_hourly[TRADED_DATE],
+				        __Cutoff,
+				        __Interval,
+				        DAY
+				    )
+				)
+
+		calculationItem 1M =
+				
+				VAR __Interval = -30
+				VAR __CutOff = [As of Date]
+				
+				RETURN
+				CALCULATE(
+				    SELECTEDMEASURE(),
+				    DATESINPERIOD(
+				        fct_stock_ohlcv_hourly[TRADED_DATE],
+				        __Cutoff,
+				        __Interval,
+				        DAY
+				    )
+				)
+
+		calculationItem 6M =
+				
+				VAR __Interval = -180
+				VAR __CutOff = [As of Date]
+				
+				RETURN
+				CALCULATE(
+				    SELECTEDMEASURE(),
+				    DATESINPERIOD(
+				        fct_stock_ohlcv_hourly[TRADED_DATE],
+				        __Cutoff,
+				        __Interval,
+				        DAY
+				    )
+				)
+
+		calculationItem YTD = ```
+				
+				CALCULATE(
+				    SELECTEDMEASURE(),
+				    DATESYTD(
+				        fct_stock_ohlcv_hourly[TRADED_DATE], 
+				        "12/31"
+				    )
+				)
+				
+				
+				```
+
+		calculationItem 1Y =
+				
+				VAR __Interval = -365
+				VAR __CutOff = [As of Date]
+				
+				RETURN
+				CALCULATE(
+				    SELECTEDMEASURE(),
+				    DATESINPERIOD(
+				        fct_stock_ohlcv_hourly[TRADED_DATE],
+				        __Cutoff,
+				        __Interval,
+				        DAY
+				    )
+				)
+
+		calculationItem 5Y = ```
+				
+				VAR __Interval = -1825
+				VAR __CutOff = [As of Date]
+				
+				RETURN
+				CALCULATE(
+				    SELECTEDMEASURE(),
+				    DATESINPERIOD(
+				        fct_stock_ohlcv_hourly[TRADED_DATE],
+				        __Cutoff,
+				        __Interval,
+				        DAY
+				    )
+				)
+				
+				```
+
+		calculationItem All = ```
+				
+				VAR __Cutoff = [As of Date]
+				
+				VAR __EarliestSymbolDate =
+				    CALCULATE(
+				        MIN(fct_stock_ohlcv_hourly[TRADED_DATE]),
+				        ALL(fct_stock_ohlcv_hourly),
+				        VALUES(fct_stock_ohlcv_hourly[SYMBOL])
+				    )
+				
+				RETURN
+				CALCULATE(
+				    SELECTEDMEASURE(),
+				    DATESBETWEEN(
+				        fct_stock_ohlcv_hourly[TRADED_DATE], 
+				        __EarliestSymbolDate,
+				        __Cutoff
+				    )
+				)
+				
+				```
+
+	column Period
+		dataType: string
+		lineageTag: 7351be3a-60df-4ab2-9a95-cc4441f93ecf
+		summarizeBy: none
+		sourceColumn: Name
+		sortByColumn: Ordinal
+
+		annotation SummarizationSetBy = Automatic
+
+	column Ordinal
+		dataType: int64
+		isKey
+		formatString: 0
+		lineageTag: 938db400-8070-42a7-a009-8a6eabc50d09
+		summarizeBy: sum
+		sourceColumn: Ordinal
+
+		annotation SummarizationSetBy = Automatic
+

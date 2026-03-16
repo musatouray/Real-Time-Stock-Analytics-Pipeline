@@ -342,5 +342,23 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "dd3a29f4d22672a06abc",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "fct_stock_ohlcv_hourly"
+              }
+            },
+            "Property": "TRADED_HOUR"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
   }
 }

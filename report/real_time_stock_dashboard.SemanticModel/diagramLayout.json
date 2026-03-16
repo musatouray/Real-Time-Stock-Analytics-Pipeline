@@ -10,8 +10,8 @@
       "nodes": [
         {
           "location": {
-            "x": 766,
-            "y": 2
+            "x": 561,
+            "y": 0
           },
           "nodeIndex": "dim_companies",
           "nodeLineageTag": "4e403a14-af18-4005-8329-7699c84369dd",
@@ -19,12 +19,12 @@
             "height": 248,
             "width": 234
           },
-          "zIndex": 4
+          "zIndex": 6
         },
         {
           "location": {
-            "x": 304,
-            "y": 399
+            "x": 128,
+            "y": 401
           },
           "nodeIndex": "fct_stock_ohlcv_hourly",
           "nodeLineageTag": "0e3171df-aa5a-49a2-8983-c2109231007c",
@@ -32,11 +32,11 @@
             "height": 300,
             "width": 234
           },
-          "zIndex": 1
+          "zIndex": 3
         },
         {
           "location": {
-            "x": 708,
+            "x": 540,
             "y": 403
           },
           "nodeIndex": "fct_stock_trades",
@@ -45,11 +45,11 @@
             "height": 300,
             "width": 234
           },
-          "zIndex": 2
+          "zIndex": 4
         },
         {
           "location": {
-            "x": 331,
+            "x": 133,
             "y": 0
           },
           "nodeIndex": "dim_date",
@@ -58,7 +58,45 @@
             "height": 300,
             "width": 234
           },
-          "zIndex": 3
+          "zIndex": 5
+        },
+        {
+          "location": {
+            "x": 990,
+            "y": 443.5
+          },
+          "nodeIndex": "Metrics",
+          "nodeLineageTag": "9a1b2c3d-4e5f-6789-abcd-ef0123456789",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 7
+        },
+        {
+          "location": {
+            "x": 993,
+            "y": 211
+          },
+          "nodeIndex": "Disconnected Date",
+          "nodeLineageTag": "e0e524a1-9266-4385-8b12-2c6c3e156585",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 1
+        },
+        {
+          "location": {
+            "x": 974,
+            "y": 0
+          },
+          "nodeIndex": "Period Filter",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0
         }
       ],
       "name": "All tables",

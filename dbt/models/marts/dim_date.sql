@@ -37,6 +37,7 @@ select
     quarter,
     month,
     month_name,
+    initcap(to_char(date, 'MON-YY')) as month_year,
     week_of_year,
     day_of_month,
     day_of_week,

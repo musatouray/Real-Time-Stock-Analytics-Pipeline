@@ -16,7 +16,7 @@ table dim_date
 	/// Calendar date value. Use for date slicers and time intelligence.
 	column DATE
 		dataType: dateTime
-		formatString: Long Date
+		formatString: Short Date
 		lineageTag: db6976b8-3804-4386-90fc-f92a1f423066
 		summarizeBy: none
 		sourceColumn: DATE
@@ -27,12 +27,14 @@ table dim_date
 
 	/// Four-digit year (e.g., 2026). Use for year-over-year comparisons.
 	column YEAR
-		dataType: double
+		dataType: int64
 		lineageTag: d2108909-ef1e-4c25-b7b9-39ac63d1a36b
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: YEAR
 
-		annotation SummarizationSetBy = Automatic
+		changedProperty = DataType
+
+		annotation SummarizationSetBy = User
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
@@ -64,6 +66,9 @@ table dim_date
 		lineageTag: f2079eaa-e2de-4100-9c32-b7338a399364
 		summarizeBy: none
 		sourceColumn: MONTH_NAME
+		sortByColumn: MONTH
+
+		changedProperty = SortByColumn
 
 		annotation SummarizationSetBy = Automatic
 
@@ -126,6 +131,17 @@ table dim_date
 		lineageTag: a9779dba-7e2f-44f6-9d7c-1ceca29b9027
 		summarizeBy: none
 		sourceColumn: IS_TRADING_DAY
+
+		annotation SummarizationSetBy = Automatic
+
+	column MONTH_YEAR
+		dataType: string
+		lineageTag: 2d525d06-b84c-487f-a1ea-98549972886e
+		summarizeBy: none
+		sourceColumn: MONTH_YEAR
+		sortByColumn: MONTH
+
+		changedProperty = SortByColumn
 
 		annotation SummarizationSetBy = Automatic
 

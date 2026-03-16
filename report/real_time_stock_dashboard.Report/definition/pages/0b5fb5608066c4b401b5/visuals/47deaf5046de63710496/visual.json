@@ -736,7 +736,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "ed18797d0b0a36a09069",
+        "name": "82c621e81837b2c10109",
         "field": {
           "Column": {
             "Expression": {
@@ -750,7 +750,21 @@
         "type": "Categorical"
       },
       {
-        "name": "63fe7142d52445b21576",
+        "name": "665cbbf94077bb1ac1c0",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "fct_stock_ohlcv_hourly"
+              }
+            },
+            "Property": "TRADED_HOUR"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "1e3daa0170ada0b8b49e",
         "field": {
           "Aggregation": {
             "Expression": {
@@ -767,20 +781,6 @@
           }
         },
         "type": "Advanced"
-      },
-      {
-        "name": "88673164493d80d00a19",
-        "field": {
-          "Column": {
-            "Expression": {
-              "SourceRef": {
-                "Entity": "fct_stock_ohlcv_hourly"
-              }
-            },
-            "Property": "TRADED_HOUR"
-          }
-        },
-        "type": "Categorical"
       }
     ]
   }

@@ -35,6 +35,36 @@ companies as (
     select symbol, company_name, sector, exchange
     from {{ ref('dim_companies') }}
 
+),
+
+-- Get the closing price for each day (last trading hour's close)
+daily_close as (
+
+    select
+        symbol,
+        hour_bucket::date as trade_date,
+        close_price as daily_close_price
+    from {{ ref('int_stock_ohlcv') }}
+    qualify row_number() over (
+        partition by symbol, hour_bucket::date
+        order by hour_bucket desc
+    ) = 1
+
+),
+
+-- Get previous trading day's close using LAG
+prev_day_close as (
+
+    select
+        symbol,
+        trade_date,
+        daily_close_price,
+        lag(daily_close_price) over (
+            partition by symbol
+            order by trade_date
+        ) as prev_day_close_price
+    from daily_close
+
 )
 
 select
@@ -54,13 +84,24 @@ select
     v.vwap,
     v.stddev_price,
     v.price_range,
-    -- Simple price-change % within the hour
+    -- Hourly change (open to close within the hour)
     round(
         (o.close_price - o.open_price) / nullif(o.open_price, 0) * 100,
         4
     ) as pct_change,
+    -- Previous trading day's close
+    p.prev_day_close_price as prev_day_close,
+    -- Change from previous day's close (Yahoo Finance style)
+    round(o.close_price - p.prev_day_close_price, 4) as change_from_prev_close,
+    round(
+        (o.close_price - p.prev_day_close_price) / nullif(p.prev_day_close_price, 0) * 100,
+        4
+    ) as pct_change_from_prev_close,
     to_number(to_char(o.hour_bucket::date, 'YYYYMMDD')) as date_key
 
 from ohlcv o
 left join volatility v using (symbol, hour_bucket)
 left join companies  c using (symbol)
+left join prev_day_close p
+    on o.symbol = p.symbol
+    and o.hour_bucket::date = p.trade_date

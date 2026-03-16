@@ -123,7 +123,7 @@ table fct_stock_ohlcv_hourly
 	/// Calendar date of trading (US/Eastern timezone).
 	column TRADED_DATE
 		dataType: dateTime
-		formatString: Long Date
+		formatString: Short Date
 		lineageTag: d7006fea-e1b3-48df-987e-b7d53ff9d995
 		summarizeBy: none
 		sourceColumn: TRADED_DATE
@@ -155,6 +155,44 @@ table fct_stock_ohlcv_hourly
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
+	column HOUR_BUCKET
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 3a16e5d9-e734-4bad-9cb0-2d17080df18a
+		summarizeBy: none
+		sourceColumn: HOUR_BUCKET
+
+		annotation SummarizationSetBy = Automatic
+
+	column PREV_DAY_CLOSE
+		dataType: double
+		lineageTag: 3d84e2d0-9877-441c-a8fc-1b94b2361df1
+		summarizeBy: sum
+		sourceColumn: PREV_DAY_CLOSE
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column CHANGE_FROM_PREV_CLOSE
+		dataType: double
+		lineageTag: e888e604-e763-4565-b81f-31e7eb642ef0
+		summarizeBy: sum
+		sourceColumn: CHANGE_FROM_PREV_CLOSE
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column PCT_CHANGE_FROM_PREV_CLOSE
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 0f29675f-b2f8-411b-9db1-ebe3127cf090
+		summarizeBy: sum
+		sourceColumn: PCT_CHANGE_FROM_PREV_CLOSE
+
+		annotation SummarizationSetBy = Automatic
+
 	partition fct_stock_ohlcv_hourly = m
 		mode: import
 		source =
@@ -163,9 +201,9 @@ table fct_stock_ohlcv_hourly
 				    STOCK_ANALYTICS_DB_Database = Source{[Name="STOCK_ANALYTICS_DB",Kind="Database"]}[Data],
 				    MARTS_Schema = STOCK_ANALYTICS_DB_Database{[Name="MARTS",Kind="Schema"]}[Data],
 				    FCT_STOCK_OHLCV_HOURLY_Table = MARTS_Schema{[Name="FCT_STOCK_OHLCV_HOURLY",Kind="Table"]}[Data],
-				    #"Removed Other Columns" = Table.SelectColumns(FCT_STOCK_OHLCV_HOURLY_Table,{"SYMBOL", "TRADED_DATE", "TRADED_HOUR", "OPEN_PRICE", "HIGH_PRICE", "LOW_PRICE", "CLOSE_PRICE", "TOTAL_VOLUME", "TRADE_COUNT", "VWAP", "STDDEV_PRICE", "PRICE_RANGE", "PCT_CHANGE", "DATE_KEY"})
+				    #"Removed Columns" = Table.RemoveColumns(FCT_STOCK_OHLCV_HOURLY_Table,{"COMPANY_NAME", "SECTOR", "EXCHANGE"})
 				in
-				    #"Removed Other Columns"
+				    #"Removed Columns"
 
 	annotation PBI_ResultType = Table
 

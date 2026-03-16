@@ -1,6 +1,7 @@
 model Model
 	culture: en-US
 	defaultPowerBIDataSourceVersion: powerBI_V3
+	discourageImplicitMeasures
 	sourceQueryCulture: en-US
 	dataAccessOptions
 		legacyRedirects
@@ -10,13 +11,15 @@ annotation __PBI_TimeIntelligenceEnabled = 0
 
 annotation PBI_QueryOrder = ["dim_companies","fct_stock_ohlcv_hourly","fct_stock_trades","dim_date","Metrics"]
 
-annotation PBI_ProTooling = ["DevMode"]
+annotation PBI_ProTooling = ["DevMode","CalcGroup","TMDLView_Desktop"]
 
 ref table dim_companies
 ref table fct_stock_ohlcv_hourly
 ref table fct_stock_trades
 ref table dim_date
 ref table Metrics
+ref table 'Disconnected Date'
+ref table 'Period Filter'
 
 ref cultureInfo en-US
 
