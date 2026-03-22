@@ -16,7 +16,11 @@
       "Bash(docker info:*)",
       "Bash(docker compose ps:*)",
       "Bash(docker:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(uv sync:*)",
+      "Bash(uv lock:*)",
+      "Bash(uv run python:*)",
+      "mcp__playwright__browser_navigate"
     ]
   }
 }

@@ -116,7 +116,7 @@ services:
       - stock_net
 
   # ─────────────────────────────────────────
-  # KAFKA CONSUMER: Kafka → S3
+  # KAFKA CONSUMER: Kafka → S3 + Redis cache
   # ─────────────────────────────────────────
   s3-consumer:
     build:
@@ -126,8 +126,12 @@ services:
     env_file: .env
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     depends_on:
       kafka:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: on-failure
     networks:
@@ -241,8 +245,29 @@ services:
       test: ["CMD", "dbt", "--version"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 10s
+      retries: 5
+      start_period: 120s  # Allow time for entrypoint to run uv sync on first startup
+
+  # ─────────────────────────────────────────
+  # STREAMLIT: Real-time stock monitor
+  # ─────────────────────────────────────────
+  streamlit:
+    build:
+      context: ./streamlit
+      dockerfile: Dockerfile
+    container_name: stock-monitor
+    env_file: .env
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "8501:8501"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - stock_net
 
 # ─────────────────────────────────────────────────────────────
 # Volumes

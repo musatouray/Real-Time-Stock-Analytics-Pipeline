@@ -678,6 +678,20 @@
           "selector": {
             "metadata": "Metrics.Latest Close Price (capped)"
           }
+        },
+        {
+          "properties": {
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Left'"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "DIM_COMPANIES.LOGO_URL"
+          }
         }
       ],
       "columnWidth": [

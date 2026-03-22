@@ -433,6 +433,15 @@ docker compose ps
 
 Every container should show `STATUS = Up` or `Up (healthy)`.
 
+Expected containers:
+- `zookeeper`, `kafka`, `kafka-ui` — Kafka infrastructure
+- `finnhub-producer` — Market data ingestion
+- `s3-consumer` — Kafka → S3 + Redis cache
+- `airflow-redis`, `airflow-postgres` — Airflow infrastructure
+- `airflow-webserver`, `airflow-scheduler`, `airflow-triggerer` — Airflow services
+- `dbt-runner` — dbt transformation container
+- `stock-monitor` — Streamlit real-time dashboard
+
 If any container shows `Exiting` or `Restarting`, check its logs:
 ```bash
 docker compose logs <container-name>
@@ -516,6 +525,30 @@ aws s3 cp s3://<YOUR_BUCKET_NAME>/raw/trades/year=2026/month=03/day=02/<path>.js
 ```
 
 You should see newline-delimited JSON trade records.
+
+### Step 6.6 — Verify Streamlit real-time dashboard
+
+Open in browser: http://localhost:8501
+
+You should see:
+- Live stock prices updating every 2 seconds
+- Price change indicators (green/red)
+- Volume and timestamp for each symbol
+- Sector filter in the sidebar
+
+If you see "No stock data available":
+- Check if the market is open (9:30 AM - 4:00 PM ET)
+- Wait 1-2 minutes for data to flow through Kafka → Consumer → Redis
+
+### Step 6.7 — Verify Redis cache from command line
+
+```bash
+# Check which symbols are cached
+docker exec -it airflow-redis redis-cli SMEMBERS stock:symbols
+
+# Check data for a specific symbol
+docker exec -it airflow-redis redis-cli HGETALL stock:AAPL:latest
+```
 
 ---
 
@@ -1058,10 +1091,12 @@ docker compose up -d --build finnhub-producer
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
+| Streamlit (Real-time) | http://localhost:8501 | (no login) |
 | Airflow UI | http://localhost:8081 | admin / admin |
 | Kafka UI | http://localhost:8080 | (no login) |
 | dbt docs | http://localhost:8082 | (run `make dbt-docs` first) |
 | Kafka broker | localhost:9092 | (external) |
+| Redis | internal only | (real-time price cache) |
 | PostgreSQL | internal only | (Airflow metadata) |
 
 ---
@@ -1123,3 +1158,20 @@ ALTER WAREHOUSE STOCK_ANALYTICS_WH RESUME;
 ```bash
 docker compose up -d --force-recreate <service-name>
 ```
+
+### Streamlit shows "No stock data available"
+
+1. Check if the market is open (9:30 AM - 4:00 PM ET, Mon-Fri)
+2. Check consumer logs: `docker logs s3-consumer` — look for "Redis connected"
+3. Check Redis has data:
+   ```bash
+   docker exec -it airflow-redis redis-cli SMEMBERS stock:symbols
+   docker exec -it airflow-redis redis-cli HGETALL stock:AAPL:latest
+   ```
+4. If Redis is empty, wait for trades to flow through the pipeline
+
+### Streamlit shows "Unable to connect to Redis"
+
+1. Check if Redis container is running: `docker compose ps redis`
+2. Check consumer can reach Redis: `docker logs s3-consumer | grep -i redis`
+3. Restart the consumer: `docker compose restart s3-consumer`

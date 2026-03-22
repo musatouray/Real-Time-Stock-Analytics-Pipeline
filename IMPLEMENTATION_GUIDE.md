@@ -163,6 +163,7 @@ make ps
 
 | UI | URL | Credentials |
 |---|---|---|
+| Streamlit (Real-time) | http://localhost:8501 | — |
 | Airflow | http://localhost:8081 | admin / admin |
 | Kafka UI | http://localhost:8080 | — |
 
@@ -180,6 +181,8 @@ make kafka-topics
 # You should see: stock.trades
 ```
 Open Kafka UI → Topics → `stock.trades` → Messages to see live trade events.
+
+**Streamlit** — open http://localhost:8501 to see live prices updating in real-time. The consumer writes to Redis alongside S3, and Streamlit reads from Redis.
 
 **S3** — check files are landing:
 ```bash
@@ -337,3 +340,9 @@ docker compose up -d --force-recreate <service-name>
 
 ### Market hours timestamp confusion
 In WebSocket mode, data only flows during market hours (9:30 AM - 4:00 PM ET). If you see "old" timestamps, the market may be closed. Check current market status before debugging.
+
+### Streamlit shows "No stock data available"
+1. Check if the market is open (9:30 AM - 4:00 PM ET, Mon-Fri)
+2. Check consumer logs: `docker logs s3-consumer` — look for "Redis connected"
+3. Check Redis has data: `docker exec -it airflow-redis redis-cli SMEMBERS stock:symbols`
+4. If Redis is empty, wait for trades to flow through the pipeline

@@ -1,6 +1,6 @@
 # Real-Time Stock Analytics Pipeline
 
-> An end-to-end data engineering portfolio project that streams live stock market data from the Finnhub API (WebSocket or REST API) through Kafka, lands it in AWS S3, auto-ingests it into Snowflake via Snowpipe, transforms it with dbt Core, orchestrates everything with Apache Airflow, and delivers insights through Power BI dashboards — all containerized with Docker.
+> An end-to-end data engineering portfolio project that streams live stock market data from the Finnhub API (WebSocket or REST API) through Kafka, lands it in AWS S3, auto-ingests it into Snowflake via Snowpipe, transforms it with dbt Core, orchestrates everything with Apache Airflow, and delivers insights through **Power BI** (historical analytics) and **Streamlit** (real-time monitoring) — all containerized with Docker.
 
 ---
 
@@ -10,11 +10,12 @@ This project simulates a production-grade real-time analytics platform that a fi
 
 - **Ingestion** of live market data via dual-mode producer (WebSocket real-time streaming or REST API 15-min polling)
 - **Streaming** through a fault-tolerant Kafka message bus
+- **Real-time caching** in Redis for instant price lookups (sub-second latency)
 - **Landing** micro-batched NDJSON files in a partitioned S3 data lake
 - **Auto-ingestion** into Snowflake using Snowpipe event-driven triggers
 - **Transformation** through a layered dbt project (staging → intermediate → marts)
 - **Orchestration** of the entire pipeline via scheduled Airflow DAGs
-- **Visualization** of business-ready mart tables in Power BI
+- **Dual visualization** — Power BI for historical analytics, Streamlit for real-time monitoring
 
 The stack mirrors what you would find at any trading desk company running a modern cloud data platform.
 
@@ -76,6 +77,7 @@ The pipeline is designed to answer five real-world business questions that a por
 |---|---|---|
 | Data source | [Finnhub](https://finnhub.io) (WebSocket + REST API) | Dual-mode: Real-time trades or 15-min polling |
 | Message bus | Apache Kafka (Confluent 7.6.1) | Durable, fault-tolerant event queue |
+| Real-time cache | Redis 7.2 | Sub-second price lookups for live dashboard |
 | Object storage | AWS S3 | Partitioned NDJSON data lake |
 | Auto-ingestion | Snowflake Snowpipe (SQS) | Event-driven, zero-touch S3 → Snowflake |
 | Data warehouse | Snowflake | Cloud-native analytical SQL engine |
@@ -83,7 +85,8 @@ The pipeline is designed to answer five real-world business questions that a por
 | Orchestration | Apache Airflow 2.10.4 | DAG scheduling, monitoring, alerting |
 | Containerization | Docker Compose | Reproducible local environment |
 | Package manager | [uv](https://github.com/astral-sh/uv) (Astral) | Fast Rust-based pip replacement in all Docker images |
-| Visualization | Microsoft Power BI | Business dashboards via Snowflake connector |
+| Visualization (historical) | Microsoft Power BI | Business dashboards via Snowflake connector |
+| Visualization (real-time) | Streamlit 1.32.2 | Live price ticker with auto-refresh |
 | Language | Python 3.11 | Producer, consumer, DAG logic |
 | IDE | VS Code | Development environment |
 
@@ -92,6 +95,8 @@ The pipeline is designed to answer five real-world business questions that a por
 ## Key Features
 
 - **Dual-mode data ingestion** — Switch between WebSocket (sub-second real-time trades) and REST API (15-min polling) via environment variable; default is WebSocket for portfolio demo, polling mode for cost optimization
+- **Real-time price cache** — Redis stores latest prices with 5-minute TTL; consumer writes to Redis alongside S3 for instant lookups
+- **Dual visualization layer** — Streamlit for live price monitoring (2-second refresh), Power BI for historical analytics and business dashboards
 - **Micro-batch S3 landing** — Consumer flushes every 100 records or 60 seconds, maintaining near-real-time latency without per-record S3 writes
 - **Event-driven Snowpipe** — SQS notifications trigger Snowpipe automatically the moment a file lands in S3; no polling required
 - **Layered dbt architecture** — Staging (views) → Intermediate (tables) → Marts (incremental merge) follows the industry-standard medallion-style pattern
@@ -119,6 +124,8 @@ I used **Claude Code** as a development accelerator to help me move 5x faster.
 
 **Architecture & Design Decisions:**
 - Dual-mode Finnhub producer (WebSocket vs REST API) with cost/latency trade-offs
+- Redis cache layer for real-time price lookups (sub-second latency)
+- Dual visualization strategy: Streamlit for operational monitoring, Power BI for historical analytics
 - Layered dbt transformation strategy (staging → intermediate → marts)
 - Incremental merge patterns with surrogate keys for idempotency
 - Snowpipe auto-ingest architecture with SQS event notifications
@@ -164,11 +171,18 @@ real_time_stock_analytics/
 │   │   ├── uv.lock                    # Pinned lockfile (committed to git)
 │   │   └── Dockerfile                 # uv sync --frozen for reproducible builds
 │   └── consumer/
-│       ├── s3_consumer.py             # Kafka → S3 micro-batch writer
-│       ├── config.py                  # Batch size, flush interval, S3 config
+│       ├── s3_consumer.py             # Kafka → S3 + Redis cache writer
+│       ├── config.py                  # Batch size, flush interval, S3/Redis config
 │       ├── pyproject.toml
 │       ├── uv.lock
 │       └── Dockerfile
+│
+├── streamlit/
+│   ├── app.py                         # Real-time stock monitor dashboard
+│   ├── config.py                      # Redis connection, symbol metadata
+│   ├── pyproject.toml
+│   ├── uv.lock
+│   └── Dockerfile
 │
 ├── airflow/
 │   ├── Dockerfile                     # Airflow 2.10.4 + providers (constraint-based)
@@ -181,6 +195,7 @@ real_time_stock_analytics/
 │
 ├── dbt/
 │   ├── Dockerfile                     # dbt-core + dbt-snowflake (uv sync --frozen)
+│   ├── entrypoint.sh                  # Ensures venv exists on container startup
 │   ├── pyproject.toml
 │   ├── uv.lock
 │   ├── dbt_project.yml                # Project config, materializations, tags
@@ -365,11 +380,12 @@ make up
 docker compose ps
 ```
 
-| Service | URL |
-|---------|-----|
-| Airflow UI | http://localhost:8081 |
-| Kafka UI | http://localhost:8080 |
-| dbt Docs | http://localhost:8082 |
+| Service | URL | Purpose |
+|---------|-----|---------|
+| Streamlit | http://localhost:8501 | Real-time stock monitor |
+| Airflow UI | http://localhost:8081 | Pipeline orchestration |
+| Kafka UI | http://localhost:8080 | Message monitoring |
+| dbt Docs | http://localhost:8082 | Data lineage |
 
 > **Full setup instructions:**
 > - **[IMPLEMENTATION_GUIDE.md](IMPLEMENTATION_GUIDE.md)** — Condensed 10-step guide
@@ -381,3 +397,12 @@ docker compose ps
 
 **Amigomusa** | Data Engineering Portfolio
 > Built to demonstrate end-to-end real-time data engineering using industry-standard tools.
+
+### Visualization Architecture
+
+| Dashboard | Data Source | Latency | Use Case |
+|-----------|-------------|---------|----------|
+| **Streamlit** | Redis cache | ~2 seconds | Real-time price monitoring, live ticker |
+| **Power BI** | Snowflake marts | ~15 minutes | Historical analytics, trend analysis, business reporting |
+
+This dual-layer approach mirrors production systems where operational dashboards (Streamlit) serve traders needing instant updates, while analytical dashboards (Power BI) serve portfolio managers analyzing trends over time.

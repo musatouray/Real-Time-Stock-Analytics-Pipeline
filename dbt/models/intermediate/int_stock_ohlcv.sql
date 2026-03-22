@@ -52,15 +52,15 @@ hourly as (
 realtime_ohlcv as (
 
     select
-        symbol,
-        hour_bucket,
-        any_value(open_price)   as open_price,
-        max(high_price)         as high_price,
-        min(low_price)          as low_price,
-        any_value(close_price)  as close_price,
-        sum(total_volume)       as total_volume,
-        sum(trade_count)        as trade_count,
-        'realtime'              as data_source
+        symbol::varchar as symbol,
+        hour_bucket::timestamp_ntz as hour_bucket,
+        any_value(open_price)::float as open_price,
+        max(high_price)::float as high_price,
+        min(low_price)::float as low_price,
+        any_value(close_price)::float as close_price,
+        sum(total_volume)::number as total_volume,
+        sum(trade_count)::number as trade_count,
+        'realtime' as data_source
 
     from hourly
     group by symbol, hour_bucket
@@ -72,17 +72,18 @@ realtime_ohlcv as (
 historical_ohlcv as (
 
     select
-        symbol,
-        hour_bucket,
-        open_price,
-        high_price,
-        low_price,
-        close_price,
-        total_volume,
-        trade_count,
+        symbol::varchar as symbol,
+        hour_bucket::timestamp_ntz as hour_bucket,
+        open_price::float as open_price,
+        high_price::float as high_price,
+        low_price::float as low_price,
+        close_price::float as close_price,
+        total_volume::number as total_volume,
+        trade_count::number as trade_count,
         'historical' as data_source
     from {{ source('intermediate', 'stock_ohlcv_historical') }}
     where granularity = 'hourly'
+      and hour_bucket is not null
 
 ),
 
@@ -103,12 +104,13 @@ combined as (
 )
 
 select
-    symbol,
-    hour_bucket,
-    open_price,
-    high_price,
-    low_price,
-    close_price,
-    total_volume,
-    trade_count
+    symbol::varchar as symbol,
+    hour_bucket::timestamp_ntz as hour_bucket,
+    open_price::float as open_price,
+    high_price::float as high_price,
+    low_price::float as low_price,
+    close_price::float as close_price,
+    total_volume::number as total_volume,
+    trade_count::number as trade_count
 from combined
+where hour_bucket is not null

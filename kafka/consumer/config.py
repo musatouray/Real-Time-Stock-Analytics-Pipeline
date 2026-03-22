@@ -18,3 +18,8 @@ S3_RAW_PREFIX = os.getenv("S3_RAW_PREFIX", "raw/trades/")
 # Flush to S3 when either threshold is reached
 S3_BATCH_SIZE = int(os.getenv("S3_BATCH_SIZE", "100"))
 S3_FLUSH_INTERVAL_SECONDS = int(os.getenv("S3_FLUSH_INTERVAL_SECONDS", "60"))
+
+# Redis configuration for real-time price cache
+REDIS_HOST = os.getenv("REDIS_HOST", "redis")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+REDIS_ENABLED = os.getenv("REDIS_ENABLED", "true").lower() == "true"

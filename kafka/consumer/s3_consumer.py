@@ -27,6 +27,7 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 import boto3
+import redis
 from confluent_kafka import Consumer, KafkaError, KafkaException
 
 from config import (
@@ -37,6 +38,9 @@ from config import (
     KAFKA_BOOTSTRAP_SERVERS,
     KAFKA_CONSUMER_GROUP,
     KAFKA_TOPIC_TRADES,
+    REDIS_ENABLED,
+    REDIS_HOST,
+    REDIS_PORT,
     S3_BATCH_SIZE,
     S3_BUCKET_NAME,
     S3_FLUSH_INTERVAL_SECONDS,
@@ -63,6 +67,24 @@ s3_client = boto3.client(
     aws_access_key_id=AWS_ACCESS_KEY_ID,
     aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
 )
+
+# ─────────────────────────────────────────────────────────────
+# Redis client for real-time price cache (optional)
+# ─────────────────────────────────────────────────────────────
+redis_client = None
+if REDIS_ENABLED:
+    try:
+        redis_client = redis.Redis(
+            host=REDIS_HOST,
+            port=REDIS_PORT,
+            decode_responses=True,
+            socket_connect_timeout=5,
+        )
+        redis_client.ping()
+        log.info("Redis connected at %s:%s", REDIS_HOST, REDIS_PORT)
+    except redis.ConnectionError as e:
+        log.warning("Redis connection failed, continuing without cache: %s", e)
+        redis_client = None
 
 
 def _extract_trade_timestamp(record: dict) -> datetime:
@@ -106,6 +128,63 @@ def _build_s3_key(partition: str) -> str:
     """Build full S3 key with partition path and unique filename."""
     filename = f"{uuid.uuid4()}.json"
     return f"{S3_RAW_PREFIX}{partition}{filename}"
+
+
+def update_redis_cache(record: dict) -> None:
+    """
+    Update Redis with the latest price for a symbol.
+
+    Redis key structure:
+      - stock:{symbol}:latest  → Hash with price, volume, timestamp, updated_at
+      - stock:symbols          → Set of all active symbols
+
+    Data expires after 5 minutes of no updates (market closed detection).
+    """
+    if redis_client is None:
+        return
+
+    try:
+        # Extract symbol - handle both WebSocket and Polling schemas
+        symbol = record.get("symbol")
+        if not symbol:
+            return
+
+        # Extract price - WebSocket uses 'price', Polling uses 'current_price'
+        price = record.get("price") or record.get("current_price")
+        if price is None:
+            return
+
+        # Extract timestamp
+        ts = record.get("timestamp", 0)
+        if ts > 10_000_000_000:
+            ts = ts / 1000  # Convert ms to seconds
+
+        # Build cache entry
+        cache_data = {
+            "symbol": symbol,
+            "price": str(price),
+            "volume": str(record.get("volume", 0)),
+            "timestamp": str(int(ts)),
+            "updated_at": str(int(time.time())),
+        }
+
+        # Add optional fields from polling mode
+        if "open_price" in record:
+            cache_data["open"] = str(record["open_price"])
+            cache_data["high"] = str(record.get("high_price", price))
+            cache_data["low"] = str(record.get("low_price", price))
+            cache_data["prev_close"] = str(record.get("previous_close", 0))
+
+        # Update Redis with pipeline for atomicity
+        pipe = redis_client.pipeline()
+        pipe.hset(f"stock:{symbol}:latest", mapping=cache_data)
+        pipe.expire(f"stock:{symbol}:latest", 300)  # 5 min TTL
+        pipe.sadd("stock:symbols", symbol)
+        pipe.expire("stock:symbols", 300)
+        pipe.execute()
+
+    except redis.RedisError as e:
+        log.warning("Redis update failed for %s: %s", record.get("symbol"), e)
 
 
 def flush_to_s3(batch: list[dict]) -> None:
@@ -191,6 +270,8 @@ def main():
                 try:
                     record = json.loads(msg.value().decode("utf-8"))
                     batch.append(record)
+                    # Update Redis cache with latest price (non-blocking)
+                    update_redis_cache(record)
                 except (json.JSONDecodeError, UnicodeDecodeError) as exc:
                     log.warning("Bad message skipped: %s", exc)
 

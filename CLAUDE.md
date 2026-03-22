@@ -12,8 +12,8 @@
 | **Project name** | Real-Time Stock Analytics Pipeline |
 | **Owner** | Amigomusa |
 | **Goal** | Portfolio project demonstrating end-to-end data engineering skills |
-| **End visualization** | Power BI (connected directly to Snowflake) |
-| **Last updated** | 2026-03-16 (Historical backfill, 20 symbols, prev_day_close metrics) |
+| **End visualization** | Power BI (historical analytics) + Streamlit (real-time monitoring) |
+| **Last updated** | 2026-03-17 (Redis cache layer, Streamlit real-time dashboard) |
 
 ---
 
@@ -45,22 +45,25 @@ Finnhub API (dual-mode)
   Kafka Consumer  (kafka/consumer/s3_consumer.py)
         │  micro-batch: 100 records OR 60 seconds
         │  NDJSON files partitioned by trade timestamp (US/Eastern)
-        ▼
-  AWS S3          s3://<bucket>/raw/trades/year=.../...  (hours = ET market hours)
-        │  SQS event notification
-        ▼
-  Snowpipe        AUTO_INGEST = TRUE
-        │  COPY INTO RAW.STOCK_TRADES_RAW (VARIANT)
-        ▼
-  Snowflake       STOCK_ANALYTICS_DB
         │
-        ├── RAW schema          (Snowpipe landing — VARIANT)
-        ├── STAGING schema      (dbt views — typed, deduplicated)
-        ├── INTERMEDIATE schema (dbt tables — OHLCV, volatility)
-        └── MARTS schema        (dbt incremental — facts + dims)
-                │
-                ▼
-        Power BI  (Direct Query or Import mode via Snowflake connector)
+        ├───────────────────────────────────────────────────────────┐
+        │                                                           │
+        ▼                                                           ▼
+  AWS S3          s3://<bucket>/raw/trades/...              Redis Cache
+        │  SQS event notification                           stock:{symbol}:latest
+        ▼                                                           │
+  Snowpipe        AUTO_INGEST = TRUE                                │
+        │  COPY INTO RAW.STOCK_TRADES_RAW (VARIANT)                 │
+        ▼                                                           ▼
+  Snowflake       STOCK_ANALYTICS_DB                        Streamlit Dashboard
+        │                                                   (Real-time monitor)
+        ├── RAW schema          (Snowpipe landing)                  │
+        ├── STAGING schema      (dbt views)                         │
+        ├── INTERMEDIATE schema (dbt tables)                        │
+        └── MARTS schema        (dbt incremental)                   │
+                │                                                   │
+                ▼                                                   ▼
+        Power BI  (Historical analytics)              Live Price Ticker (8501)
 ```
 
 ---
@@ -72,13 +75,15 @@ Finnhub API (dual-mode)
 | Data source | Finnhub (WebSocket + REST API dual-mode) | — |
 | Streaming | Apache Kafka (Confluent) | 7.6.1 |
 | Object storage | AWS S3 | — |
+| Real-time cache | Redis | 7.2 |
 | Data warehouse | Snowflake | — |
 | Ingestion | Snowpipe (AUTO_INGEST via SQS) | — |
 | Transformation | dbt Core + dbt-snowflake | 1.8.2 |
 | Orchestration | Apache Airflow (LocalExecutor) | 2.10.4 |
 | Containerization | Docker Compose | — |
 | Package manager | uv (Astral) | latest |
-| Visualization | Microsoft Power BI | Desktop |
+| Visualization (historical) | Microsoft Power BI | Desktop |
+| Visualization (real-time) | Streamlit | 1.32.2 |
 | Language | Python | 3.11 |
 | IDE | VS Code | — |
 
@@ -92,14 +97,15 @@ Finnhub API (dual-mode)
 | `kafka` | Message broker | 9092 (host), 29092 (internal) |
 | `kafka-ui` | Kafka monitoring UI | 8080 |
 | `finnhub-producer` | Finnhub (WS or REST) → Kafka | — |
-| `s3-consumer` | Kafka → S3 micro-batches | — |
+| `s3-consumer` | Kafka → S3 + Redis cache | — |
 | `postgres` | Airflow metadata DB | internal |
-| `redis` | Airflow Celery broker | internal |
+| `redis` | Real-time price cache + Airflow broker | internal |
 | `airflow-webserver` | Airflow UI | 8081 |
 | `airflow-scheduler` | DAG scheduling | — |
 | `airflow-worker` | ~~Removed~~ (LocalExecutor runs tasks in scheduler) | — |
 | `airflow-triggerer` | Deferred tasks | — |
 | `dbt` | dbt runner (keep-alive) | 8082 (docs) |
+| `streamlit` | Real-time stock monitor | 8501 |
 
 ---
 
@@ -266,13 +272,13 @@ docker exec dbt-runner dbt run --full-refresh --project-dir /usr/app/dbt --profi
 
 ```
 .env.example                      ← template for all secrets
-docker-compose.yml                ← all 12 services
+docker-compose.yml                ← all services
 Makefile                          ← make up / down / dbt-run / kafka-topics
 README.md                         ← project overview + quick start
 IMPLEMENTATION_GUIDE.md           ← condensed 10-step setup guide
 INSTRUCTIONS.md                   ← complete 12-phase walkthrough
 kafka/producer/finnhub_producer.py
-kafka/consumer/s3_consumer.py
+kafka/consumer/s3_consumer.py     ← writes to S3 + Redis cache
 airflow/dags/stock_pipeline_dag.py
 airflow/dags/dbt_transform_dag.py
 dbt/dbt_project.yml
@@ -281,6 +287,9 @@ dbt/models/staging/stg_stock_trades.sql
 dbt/models/marts/fct_stock_trades.sql
 dbt/models/marts/fct_stock_ohlcv_hourly.sql
 dbt/macros/generate_schema_name.sql  ← schemas named exactly, no prefix
+dbt/entrypoint.sh                 ← ensures venv exists on startup
+streamlit/app.py                  ← real-time stock monitor dashboard
+streamlit/config.py               ← Redis connection + symbol metadata
 snowflake/setup/01–07_*.sql       ← ordered Snowflake provisioning scripts
 snowflake/queries/monitoring_queries.sql
 scripts/init.sh / start.sh / stop.sh
@@ -360,3 +369,6 @@ scripts/pyproject.toml            ← dependencies for backfill script (uv manag
 | 2026-03-16 | **Previous day close metrics**: Added `prev_day_close`, `change_from_prev_close`, `pct_change_from_prev_close` columns to `fct_stock_ohlcv_hourly` for Yahoo Finance-style price change display |
 | 2026-03-16 | **Historical data backfill**: Created `scripts/backfill_historical.py` to load 5Y daily + 2Y hourly OHLCV from yfinance; added `INTERMEDIATE.STOCK_OHLCV_HISTORICAL` source table; updated `int_stock_ohlcv` to union real-time with historical data |
 | 2026-03-16 | **Expanded to 20 symbols**: Added UNH, XOM, WMT, MA, NFLX, AVGO, AMD, CRM, ORCL, DIS; updated `kafka/producer/config.py` and `dbt/seeds/stock_symbols.csv` |
+| 2026-03-17 | **Fixed dbt-runner startup failure**: Added `entrypoint.sh` that runs `uv sync` if venv is empty (handles named volume mounting over image's `.venv`); increased healthcheck `start_period` to 120s and retries to 5 |
+| 2026-03-17 | **Redis cache layer**: Modified `s3-consumer` to write latest prices to Redis alongside S3; added `redis` dependency; Redis key pattern `stock:{symbol}:latest` with 5-min TTL |
+| 2026-03-17 | **Streamlit real-time dashboard**: Added `streamlit/` service for live price monitoring; reads from Redis cache; auto-refresh every 2s; shows price, volume, change %, sector filter; port 8501 |

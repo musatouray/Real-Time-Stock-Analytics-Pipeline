@@ -1,12 +1,13 @@
 [project]
 name = "s3-consumer"
 version = "0.1.0"
-description = "Kafka → S3 micro-batch NDJSON consumer"
+description = "Kafka → S3 micro-batch NDJSON consumer with Redis cache"
 requires-python = ">=3.11"
 dependencies = [
     "confluent-kafka==2.4.0",
     "boto3==1.34.101",
     "python-dotenv==1.0.1",
+    "redis==5.0.4",
 ]
 
 [tool.uv]

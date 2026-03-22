@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.6.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.7.0/schema.json",
   "name": "a21732dc7e21ca1d6b36",
   "position": {
     "x": 23.711783511125777,
@@ -995,5 +995,23 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "7334ef09810e727bea0d",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "dim_companies"
+              }
+            },
+            "Property": "COMPANY_NAME"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
   }
 }

@@ -17,4 +17,9 @@ RUN uv sync --no-dev --frozen
 COPY . .
 RUN uv run dbt deps --project-dir /usr/app/dbt --profiles-dir /usr/app/dbt
 
+# Entrypoint ensures venv is populated even if volume mounts over it
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["tail", "-f", "/dev/null"]

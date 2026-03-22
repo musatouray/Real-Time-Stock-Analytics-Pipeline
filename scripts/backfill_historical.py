@@ -109,9 +109,19 @@ def normalize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
                     "low_price", "close_price", "total_volume", "granularity"]
     df = df[[c for c in cols_to_keep if c in df.columns]]
 
-    # Convert timezone-aware timestamps to timezone-naive (UTC)
+    # Convert timezone-aware timestamps to timezone-naive (America/New_York)
     if df["hour_bucket"].dt.tz is not None:
+        # Timezone-aware: convert to Eastern Time, then remove timezone info
         df["hour_bucket"] = df["hour_bucket"].dt.tz_convert("America/New_York").dt.tz_localize(None)
+
+    # Ensure proper datetime format
+    df["hour_bucket"] = pd.to_datetime(df["hour_bucket"])
+
+    # Drop any rows with invalid timestamps (NaT)
+    df = df.dropna(subset=["hour_bucket"])
+
+    # Convert to string format that Snowflake can reliably parse
+    df["hour_bucket"] = df["hour_bucket"].dt.strftime("%Y-%m-%d %H:%M:%S")
 
     # Add trade_count as 1 (we don't have this from yfinance)
     df["trade_count"] = 1
@@ -160,9 +170,6 @@ def load_to_snowflake(df: pd.DataFrame, conn):
     if df.empty:
         print("  No data to load.")
         return
-
-    # Uppercase column names for Snowflake
-    df.columns = [c.upper() for c in df.columns]
 
     success, num_chunks, num_rows, _ = write_pandas(
         conn=conn,

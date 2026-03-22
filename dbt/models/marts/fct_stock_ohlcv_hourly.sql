@@ -42,12 +42,13 @@ daily_close as (
 
     select
         symbol,
-        hour_bucket::date as trade_date,
+        (hour_bucket::timestamp_ntz)::date as trade_date,
         close_price as daily_close_price
     from {{ ref('int_stock_ohlcv') }}
+    where hour_bucket is not null
     qualify row_number() over (
-        partition by symbol, hour_bucket::date
-        order by hour_bucket desc
+        partition by symbol, (hour_bucket::timestamp_ntz)::date
+        order by hour_bucket::timestamp_ntz desc
     ) = 1
 
 ),
@@ -72,7 +73,7 @@ select
     c.company_name,
     c.sector,
     c.exchange,
-    o.hour_bucket,
+    o.hour_bucket::timestamp_ntz as hour_bucket,
     o.hour_bucket::date as traded_date,
     o.hour_bucket::time as traded_hour,
     o.open_price,

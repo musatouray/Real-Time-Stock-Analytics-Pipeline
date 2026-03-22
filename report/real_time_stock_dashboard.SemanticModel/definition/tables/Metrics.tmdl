@@ -360,27 +360,29 @@ table Metrics
 	measure 'Dates Range Subtitle' = ```
 			
 			VAR __CalcItem = SELECTEDVALUE('Period Filter'[Period])
+			VAR __TradingTimeCutOff = [Trading Time CutOff]
 			VAR __Min = CALCULATE(MIN(fct_stock_ohlcv_hourly[TRADED_DATE]))
 			VAR __Max = CALCULATE(MAX(fct_stock_ohlcv_hourly[TRADED_DATE]))
 			VAR __MaxHour = CALCULATE(MAX(fct_stock_ohlcv_hourly[TRADED_HOUR]), ALLSELECTED(fct_stock_ohlcv_hourly[SYMBOL]))
-			VAR __MaxDateTime = IF(NOT(ISBLANK(__MaxHour)), __Max + __MaxHour, __Max)
-			VAR __TodayFormat = FORMAT(__MaxDateTime, "MMMM d") & " at " & FORMAT(__MaxDateTime, "h:mm:ss AM/PM")
-			VAR __RangeFormat = FORMAT(__Min, "MMMM d") & " to " & FORMAT(__Max, "MMMM d")
+			VAR __MaxDateTime = IF(NOT(ISBLANK(__MaxHour)) && FORMAT(__MaxHour, "h:mm AM/PM") <= FORMAT(__TradingTimeCutOff, "h:mm AM/PM"), __Max + __MaxHour, __Max)
+			
+			VAR __TodayFormat = FORMAT(__MaxDateTime, "MMMM d") & " at " & FORMAT(__MaxDateTime, "h:mm AM/PM")
+			VAR __RangeFormat = FORMAT(__Min, "MMMM d yyyy") & " to " & FORMAT(__TradingTimeCutOff, "MMMM d yyyy")
 			VAR __TodayUTCDate = DATE(YEAR(UTCNOW()), MONTH(UTCNOW()), DAY(UTCNOW()))
 			VAR __IsWeekend = WEEKDAY(__TodayUTCDate, 2) >= 6
-			VAR __WeekendCloseMessage = "Trade prices at close: " & FORMAT(__MaxDateTime, "MMMM d") & " at " & FORMAT(__MaxDateTime, "h:mm:ss AM/PM")
+			VAR __WeekendCloseMessage = "Trade prices at close: " & FORMAT(__TradingTimeCutOff, "MMMM d") & " at " & FORMAT(__TradingTimeCutOff, "h:mm AM/PM")
 			
 			RETURN
 			SWITCH(
 			    __CalcItem,
 			    "1D", IF(__IsWeekend, __WeekendCloseMessage, "Real-time trade prices as of " & __TodayFormat),
-			    "5D", "Trade prices as of the last 5 Days - (" & __RangeFormat & ")",
-			    "1M", "Trade prices as of the last 1 Month - (" & __RangeFormat & ")",
-			    "6M", "Trade prices as of the last 6 Months - (" & __RangeFormat & ")",
-			    "1Y", "Trade prices as of the last 1 Year - (" & __RangeFormat & ")",
-			    "5Y", "Trade prices as of the last 5 Years - (" & __RangeFormat & ")",
-			    "YTD", "Trade prices as of current year to date - (" & __RangeFormat & ")",
-			    "All", "Trade prices for all available data - (" & __RangeFormat & ")",
+			    "5D", "Trade prices as of the last 5 Days: " & __RangeFormat,
+			    "1M", "Trade prices as of the last 1 Month: " & __RangeFormat,
+			    "6M", "Trade prices as of the last 6 Months: " & __RangeFormat,
+			    "1Y", "Trade prices as of the last 1 Year: " & __RangeFormat,
+			    "5Y", "Trade prices as of the last 5 Years: " & __RangeFormat,
+			    "YTD", "Trade prices as of current year to date: " & __RangeFormat,
+			    "All", "Trade prices for all available data: " & __RangeFormat,
 			    "Period not selected"
 			)
 			
